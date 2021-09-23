@@ -45,7 +45,23 @@ int main(int argc, char const * argv[]) {
 
     int bytesReceive = recvfrom(socketFD, (void *) buff, bufferSize, 0, (struct sockaddr *) &socketOutput, &lenOutput);
 
-    printf("%d bytes received!", bytesReceive);  //wo jue de ying gai xian xie deliver.c
+    //check if recvfrom is successful
+    if(bytesReceive == -1){
+        printf("recvfrom error...\n");
+    }else{
+        printf("%d bytes received!", bytesReceive);  //wo jue de ying gai xian xie deliver.c
+    }
+
+    //check if the client is sending "ftp" or not
+    if(buf == "ftp"){
+        //sendto client "yes"
+        printf("Yes\n");
+    }else{
+        //sendto client "no"
+        printf("No\n");
+    }
+
+    close(socketFD);
 
     return 0;
 }
