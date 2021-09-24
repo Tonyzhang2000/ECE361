@@ -4,6 +4,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
+
+#define MAXBUFLEN 100
 
 int main(int argc, char const * argv[]) {
 
@@ -38,27 +41,36 @@ int main(int argc, char const * argv[]) {
         printf("Bind successfully!\n");
     }
 
-    int bufferSize = 44;
-    int buff[44] = {0};
-    struct sockaddr_in socketOutput;
-    socklen_t lenOutput;
+    //const int bufferSize = 44;
+    char buff[MAXBUFLEN] = {0};
+    struct sockaddr_storage socketOutput;
+    socklen_t lenOutput = sizeof(socketOutput);
 
-    int bytesReceive = recvfrom(socketFD, (void *) buff, bufferSize, 0, (struct sockaddr *) &socketOutput, &lenOutput);
+    int bytesReceive = recvfrom(socketFD, (void *) buff, MAXBUFLEN, 0, (struct sockaddr *) &socketOutput, &lenOutput);
 
     //check if recvfrom is successful
     if(bytesReceive == -1){
         printf("recvfrom error...\n");
     }else{
-        printf("%d bytes received!", bytesReceive);  //wo jue de ying gai xian xie deliver.c
+        printf("%d bytes received!\n", bytesReceive);  //wo jue de ying gai xian xie deliver.c
     }
 
     //check if the client is sending "ftp" or not
-    if(buf == "ftp"){
-        //sendto client "yes"
-        printf("Yes\n");
+    if(strcmp(buff, "ftp") == 0){
+        if((sendto(socketFD, "yes", 3, 0, (struct sockaddr *) &socketOutput, lenOutput)) == -1){
+            printf("Error! Could not send message to client...\n");
+            return 0;
+        }else{
+            printf("Yes, Please continue ftp process\n");
+        }
     }else{
         //sendto client "no"
-        printf("No\n");
+        if((sendto(socketFD, "no", 2, 0, (struct sockaddr *) &socketOutput, lenOutput)) == -1){
+            printf("Error! Could not send message to client...\n");
+            return 0;
+        }else{
+            printf("No, the msg is not ftp\n");
+        }
     }
 
     close(socketFD);
