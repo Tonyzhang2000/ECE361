@@ -53,6 +53,7 @@ int main(int argc, char const * argv[]) {
     //1. exist, send "ftp" to server
     //2. exit 
     char message[256], file_to_cp[256];
+    printf("Input a message of the following form\n\t ftp <file name>\n");
     scanf("%s%s", message, file_to_cp);
     if(strcmp(message, "ftp") == 0 ){
         if(access(file_to_cp, F_OK) != -1){
@@ -89,7 +90,6 @@ int main(int argc, char const * argv[]) {
     }
 
     freeaddrinfo(serverinfo);
-    printf("reach end\n");
     close(socketFD);
     return 0;
 }

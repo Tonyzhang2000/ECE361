@@ -25,7 +25,7 @@ int main(int argc, char const * argv[]) {
         printf("Socket created successfully!\n");
     }
 
-    printf("Opening port number %d...\n", portNumber);
+    printf("Server recieving on port %d...\n", portNumber);
 
     struct sockaddr_in socketInput;
     socketInput.sin_family = AF_INET;
@@ -73,7 +73,7 @@ int main(int argc, char const * argv[]) {
         }
     }
 
-    close(socketFD);
+   close(socketFD);
 
     return 0;
 }
