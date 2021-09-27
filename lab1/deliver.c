@@ -63,8 +63,8 @@ int main(int argc, char const * argv[]) {
                 return 0;
             }
         }else{
-            printf("File doesn't exist!\n");
-            return 0;
+            perror("access");
+            exit(1);
         }
     }else{
         printf("Error! Didn't find ftp entered\n");
