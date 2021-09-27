@@ -21,12 +21,13 @@ int main(int argc, char const * argv[]) {
 
     //Copied from Beej's guide
     struct addrinfo hints;
-    struct addrinfo *serverinfo;
+    struct addrinfo *serverinfo;    //will point to result
 
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = AI_PASSIVE;
+    
+    memset(&hints, 0, sizeof hints);   //make struct empty
+    hints.ai_family = AF_INET;         //IPv4
+    hints.ai_socktype = SOCK_DGRAM;    //UDP
+    hints.ai_flags = AI_PASSIVE;       //Fill in my ip address
 
     int status = getaddrinfo(destIp, portNum, &hints, &serverinfo);
     
@@ -37,6 +38,7 @@ int main(int argc, char const * argv[]) {
         printf("Get address information successfully!\n");
     }
 
+    //get file descriptor
     int socketFD = socket(serverinfo->ai_family, serverinfo->ai_socktype, serverinfo->ai_protocol);
 
     if(socketFD == -1) {
@@ -90,7 +92,7 @@ int main(int argc, char const * argv[]) {
     }
 
     freeaddrinfo(serverinfo);
-    close(socketFD);
+    close(socketFD);         //prevent any read or write
     return 0;
 }
 
