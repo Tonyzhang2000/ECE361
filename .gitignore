@@ -1,5 +1,5 @@
-#.gitignore
+.idea/
+.DS_Store
 *.o
 lab1/deliver
 lab1/server
-lab1/.o
