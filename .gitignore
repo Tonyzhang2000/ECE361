@@ -1,5 +1,10 @@
-.idea/
-.DS_Store
-*.o
 lab1/deliver
 lab1/server
+lab1/deliver.o
+lab1/server.o
+lab1/*.o
+lab2/deliver
+lab2/server
+lab2/deliver.o
+lab2/server.o
+lab2/*.o
