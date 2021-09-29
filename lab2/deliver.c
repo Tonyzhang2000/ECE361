@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <time.h>
 
 #define MAXBUFLEN 100
 
@@ -54,12 +55,20 @@ int main(int argc, char const * argv[]) {
     //check if file exist
     //1. exist, send "ftp" to server
     //2. exit 
+
+    char buff[MAXBUFLEN] = {0};
+    struct sockaddr_storage socketOutput;
+    socklen_t lenOutput = sizeof(socketOutput);
+    
+    clock_t start, end;
+    double time_used;
     char message[256], file_to_cp[256];
     printf("Input a message of the following form\n\t ftp <file name>\n");
     scanf("%s%s", message, file_to_cp);
     if(strcmp(message, "ftp") == 0 ){
         if(access(file_to_cp, F_OK) != -1){
             int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
+            start = clock();
             if( byteSend == -1){
                 printf("Error! Could not send message to server\n");
                 return 0;
@@ -78,11 +87,12 @@ int main(int argc, char const * argv[]) {
     //1. yes: print "A file transfer can start"
     //2. no: exit 
 
-    char buff[MAXBUFLEN] = {0};
-    struct sockaddr_storage socketOutput;
-    socklen_t lenOutput = sizeof(socketOutput);
 
     int msg_receive_from_server = recvfrom(socketFD, (void *) buff, MAXBUFLEN, 0,  (struct sockaddr *) &socketOutput, &lenOutput);
+    end = clock();
+    time_used = (double)(end - start)/CLOCKS_PER_SEC;
+
+    printf("RTT is %lf seconds.\n", time_used);
 
     if(strcmp(buff, "yes") == 0){
         printf("A file transfer can start\n");
