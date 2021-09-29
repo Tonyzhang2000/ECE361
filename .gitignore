@@ -1,0 +1,5 @@
+#.gitignore
+*.o
+lab1/deliver
+lab1/server
+lab1/.o
