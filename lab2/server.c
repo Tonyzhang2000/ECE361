@@ -6,6 +6,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include "packet.h"
+
 #define MAXBUFLEN 100
 
 int main(int argc, char const * argv[]) {
