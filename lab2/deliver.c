@@ -65,23 +65,38 @@ int main(int argc, char const * argv[]) {
     char message[256], file_to_cp[256];
     printf("Input a message of the following form\n\t ftp <file name>\n");
     scanf("%s%s", message, file_to_cp);
-    if(strcmp(message, "ftp") == 0 ){
-        if(access(file_to_cp, F_OK) != -1){
-            int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
-            start = clock();
-            if( byteSend == -1){
-                printf("Error! Could not send message to server\n");
-                return 0;
-            }
-        }else{
-            printf("File doesn't exist!\n");
-            return 0;
-        }
-    }else{
+    if(strcmp(message, "ftp") != 0 ){
         printf("Error! Didn't find ftp entered\n");
+        return 0;
+    } else if(access(file_to_cp, F_OK) == -1) {
+        printf("File doesn't exist!\n");
         return 0;
     }
 
+    //now we know that file exist, want to find some information of the file
+    //first find the file length, which will tellls us the number of packets we need
+
+    FILE *file = fopen(file_to_cp, "r"); //"r" means open a exist file to read
+    if(file == NULL) {
+        printf("Error! Can't open file...");
+        return 0;
+    } 
+
+    fseek(file, 0, SEEK_END);  //set the pointer to the end of the file
+    int numberPackets = ftell(file) / 1000 + 1; 
+    fseek(file, 0, SEEK_SET);  //set the pointer to the start of the file
+    printf("We need %d packets\n", numberPackets);
+
+    char **packs = malloc(sizeof(int *) * numberPackets); //creat the packets array
+    
+    //creat packets one by one
+    for(int i = 0;i < numberPackets;i++) {
+        printf("Preparing packet number %d...", i + 1);
+    }
+
+    int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
+    start = clock();
+            
 
     //get msg from server
     //1. yes: print "A file transfer can start"
