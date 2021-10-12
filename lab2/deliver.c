@@ -75,6 +75,8 @@ int main(int argc, char const * argv[]) {
         return 0;
     }
 
+    int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
+
     //now we know that file exist, want to find some information of the file
     //first find the file length, which will tellls us the number of packets we need
 
@@ -85,18 +87,49 @@ int main(int argc, char const * argv[]) {
     } 
 
     fseek(file, 0, SEEK_END);  //set the pointer to the end of the file
-    int numberPackets = ftell(file) / 1000 + 1; 
+    int numData = ftell(file);
+    int numberPackets = numData / 1000 + 1; 
     fseek(file, 0, SEEK_SET);  //set the pointer to the start of the file
     printf("We need %d packets\n", numberPackets);
 
-    char **packs = malloc(sizeof(int *) * numberPackets); //creat the packets array
-    
-    //creat packets one by one
-    for(int i = 0;i < numberPackets;i++) {
-        printf("Preparing packet number %d...", i + 1);
+
+    for(int curNum = 0;curNum < numberPackets;curNum++) {
+
+        //preparing packets
+        printf("Preparing packet number %d...", curNum + 1);
+        struct packet pack;
+        memset(pack.filedata, '\0', 1000);
+        int packSize = fread((void*) pack.filedata, sizeof(char), 1000, file);
+        pack.total_frag = numberPackets;
+        pack.frag_no = curNum;
+        if(curNum == numberPackets - 1) {
+            pack.size = numData % 1000;
+            if(pack.size == 0) pack.size = 1000;
+        } else pack.size = 1000;
+        pack.filename = file_to_cp;
+        printf("Finished!\n");
+        //我操我写到这儿发现packet没有存在的意义
+        //重新搞一个数组妈的
+
+        //Item that actually sent
+        char sentItem[2000]; 
+
+        //store things in the item and calculate the length
+        int headerLength = //我去查查气死我了！！！！！
+
+        //send packets
+        //first calculate packet size
+        packSize = packSize + sizeof(pack.total_frag) + sizeof(pack.frag_no) + sizeof(pack.size) + sizeof(pack.filename);
+        if(sendto(socketFD, sentItem, /*他的长度*/, 0, serverinfo->ai_addr, serverinfo->ai_addrlen) == -1) {
+            printf("Error! Can't send packet number %d...", curNum+1);
+            return 0;
+        }  else {
+            printf("Packet number %d has been sent...", curNum+1);
+        }
+
     }
 
-    int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
+
     start = clock();
             
 
