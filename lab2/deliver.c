@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "packet.h"
+
 #define MAXBUFLEN 100
 
 int main(int argc, char const * argv[]) {
