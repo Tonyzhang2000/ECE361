@@ -95,11 +95,11 @@ int main(int argc, char const * argv[]) {
 
     for(int curNum = 0;curNum < numberPackets;curNum++) {
 
-        //preparing packets
+        //preparing packets, store packet data
         printf("Preparing packet number %d...", curNum + 1);
         struct packet pack;
         memset(pack.filedata, '\0', 1000);
-        int packSize = fread((void*) pack.filedata, sizeof(char), 1000, file);
+        fread((void*) pack.filedata, sizeof(char), 1000, file);
         pack.total_frag = numberPackets;
         pack.frag_no = curNum;
         if(curNum == numberPackets - 1) {
@@ -108,23 +108,27 @@ int main(int argc, char const * argv[]) {
         } else pack.size = 1000;
         pack.filename = file_to_cp;
         printf("Finished!\n");
+        printf("%d\n", pack.size);
         //我操我写到这儿发现packet没有存在的意义
-        //重新搞一个数组妈的
 
         //Item that actually sent
         char sentItem[2000]; 
 
-        //store things in the item and calculate the length
-        int headerLength = //我去查查气死我了！！！！！
+        //store packet content in the item and calculate the length
+        int packSize = serialize(&pack, sentItem);
+        packSize += pack.size;
 
-        //send packets
-        //first calculate packet size
-        packSize = packSize + sizeof(pack.total_frag) + sizeof(pack.frag_no) + sizeof(pack.size) + sizeof(pack.filename);
-        if(sendto(socketFD, sentItem, /*他的长度*/, 0, serverinfo->ai_addr, serverinfo->ai_addrlen) == -1) {
+        //debug message
+        printf("packet length: %d, buffsize: %d\n", packSize, sizeof(sentItem));
+        printf("%s\n", sentItem);
+
+
+        //send packets, size calculation is wrong
+        if(sendto(socketFD, sentItem, packSize, 0, serverinfo->ai_addr, serverinfo->ai_addrlen) == -1) {
             printf("Error! Can't send packet number %d...", curNum+1);
             return 0;
         }  else {
-            printf("Packet number %d has been sent...", curNum+1);
+            printf("Packet number %d has been sent...\n", curNum+1);
         }
 
     }
