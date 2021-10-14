@@ -26,7 +26,6 @@ int main(int argc, char const * argv[]) {
     struct addrinfo hints;
     struct addrinfo *serverinfo;    //will point to result
 
-    
     memset(&hints, 0, sizeof hints);   //make struct empty
     hints.ai_family = AF_INET;         //IPv4
     hints.ai_socktype = SOCK_DGRAM;    //UDP
@@ -76,6 +75,24 @@ int main(int argc, char const * argv[]) {
     }
 
     int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
+
+    start = clock();
+            
+    //get msg from server
+    //1. yes: print "A file transfer can start"
+    //2. no: exit 
+    int msg_receive_from_server = recvfrom(socketFD, (void *) buff, MAXBUFLEN, 0,  (struct sockaddr *) &socketOutput, &lenOutput);
+    end = clock();
+    time_used = (double)(end - start)/CLOCKS_PER_SEC;
+
+    printf("RTT is %lf seconds.\n", time_used);
+
+    if(strcmp(buff, "yes") == 0){
+        printf("A file transfer can start\n");
+    }else{
+        printf("error, can't start file transfer\n");
+        return 0;
+    }
 
     //now we know that file exist, want to find some information of the file
     //first find the file length, which will tellls us the number of packets we need
@@ -131,30 +148,21 @@ int main(int argc, char const * argv[]) {
             printf("Packet number %d has been sent...\n", curNum+1);
         }
 
+        //After we sent the message, we expect an "ACK" message from the server
+        char message[MAXBUFLEN] = {0};
+        struct sockaddr_storage serverOut;
+        socklen_t lenServerOut = sizeof(serverOut);
+        recvfrom(socketFD, (void*) message, MAXBUFLEN, 0, (struct sockaddr *) &serverOut, &lenServerOut);
+
+        //Check if get the "ACK" message
+        if(strcmp(message, "ACK") == 0) {
+            printf("ACK message received!\n");
+        } else {
+            printf("Error! No ACK message received. Exiting...");
+        }
+
     }
-
-
-    start = clock();
-            
-
-    //get msg from server
-    //1. yes: print "A file transfer can start"
-    //2. no: exit 
-
-
-    int msg_receive_from_server = recvfrom(socketFD, (void *) buff, MAXBUFLEN, 0,  (struct sockaddr *) &socketOutput, &lenOutput);
-    end = clock();
-    time_used = (double)(end - start)/CLOCKS_PER_SEC;
-
-    printf("RTT is %lf seconds.\n", time_used);
-
-    if(strcmp(buff, "yes") == 0){
-        printf("A file transfer can start\n");
-    }else{
-        printf("error, can't start file transfer\n");
-        return 0;
-    }
-
+    
     freeaddrinfo(serverinfo);
     close(socketFD);         //prevent any read or write
     return 0;
