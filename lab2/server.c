@@ -76,14 +76,15 @@ int main(int argc, char const * argv[]) {
     }
 
     char recvItem[2000];                                 //老板我发现这个玩意如果declare在while loop里面就会segfault，为啥啊
-    int total_packet_num = 1, current_packet_num = 1;
+    int total_packet_num = 1, current_packet_num = 0;
+    FILE * file;
 
-    while(current_packet_num <= total_packet_num) {
+    while(current_packet_num < total_packet_num) {
 
         //initialize packet to receive imformation
         struct packet pack;
         memset(pack.filedata, 0, 1000 * sizeof(char));
-        memset(recvItem, 0, sizeof(recvfrom));
+        memset(recvItem, 0, sizeof(recvfrom)); 
 
         //initialize string to receive message in recvfrom(), set the string size to 2000
         struct sockaddr_storage deliverIn;
@@ -96,34 +97,38 @@ int main(int argc, char const * argv[]) {
         deserialize(&pack, recvItem);
 
         //create new file and write into the file
-        FILE * file;
-        char new[] = "new_";
-        strcat(new, pack.filename);
-        file = fopen(new, "w");
-        printf("%s", new);
-        if(file != NULL) {
-            printf("File created");
-        } else {
-            printf("File created failed");
+        if(current_packet_num == 0) {
+            char new[] = "new_";
+            strcat(new, pack.filename);
+            file = fopen(new, "w");
+            printf("%s", new);
+            if(file != NULL) {
+                printf("File created");
+            } else {
+                printf("File created failed");
+            }
         }
          
-        fwrite(pack.filedata, sizeof(char), pack.size, file);
-        printf("reach here");
+        fwrite(pack.filedata, sizeof(char), pack.size, file); 
+        
+        
 
         //update total packet number and current packet num
         total_packet_num = pack.total_frag; 
         current_packet_num++;
 
         //After everything is done, send the ACK message tell the deliver to send a new packet
-        if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) { 
-            printf("Error! Can't send ACK message\n"); 
+        if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) {     
+            printf("Error! Can't send ACK message\n");  
             return 0;
         } else {
-            printf("ACK message has been sent!\n");   
-        } 
+            printf("ACK message has been sent!\n");     
+        }  
     }
+
+    fclose(file);
  
-   close(socketFD);   
+    close(socketFD);   
 
     return 0;
 }

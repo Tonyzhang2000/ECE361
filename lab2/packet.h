@@ -5,7 +5,7 @@ struct packet{
     unsigned int total_frag;
     unsigned int frag_no;
     unsigned int size;
-    char* filename;
+    char filename[100];                                     //就是这里应该是 char * filename;
     char filedata[1000];
 };
 
@@ -76,12 +76,10 @@ void deserialize(struct packet *pack, const char *buff) {
             break;
         }
     }
+
     memset(str, 0, sizeof(str));
     memcpy(str, buff + curidx, len);
-    printf("@@@%s@@@\n", str);
-    //memset(pack->filename, 0, sizeof(pack->filename));
-    strcpy(pack->filename, str);
-    //pack->filename = "";
+    strcpy((pack->filename), str);
     curidx += len; 
     curidx++;
 
@@ -93,7 +91,7 @@ void deserialize(struct packet *pack, const char *buff) {
     printf("totalfrag = %d\n", pack->total_frag);
     printf("currentfrag = %d\n", pack->frag_no);
     printf("size = %d\n", pack->size);
-    printf("filename = %s\n", pack->filename);
+    printf("filename = %s\n", &(pack->filename));
     printf("filedata = %s\n", pack->filedata);
 
     return;  
