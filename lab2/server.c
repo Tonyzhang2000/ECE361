@@ -95,20 +95,35 @@ int main(int argc, char const * argv[]) {
         //now that we received the message, we start to deserialize the packet
         deserialize(&pack, recvItem);
 
+        //create new file and write into the file
+        FILE * file;
+        char new[] = "new_";
+        strcat(new, pack.filename);
+        file = fopen(new, "w");
+        printf("%s", new);
+        if(file != NULL) {
+            printf("File created");
+        } else {
+            printf("File created failed");
+        }
+         
+        fwrite(pack.filedata, sizeof(char), pack.size, file);
+        printf("reach here");
+
         //update total packet number and current packet num
-        total_packet_num = pack.total_frag;
+        total_packet_num = pack.total_frag; 
         current_packet_num++;
 
         //After everything is done, send the ACK message tell the deliver to send a new packet
-        if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) {
-            printf("Error! Can't send ACK message\n");
+        if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) { 
+            printf("Error! Can't send ACK message\n"); 
             return 0;
         } else {
-            printf("ACK message has been sent!\n");
-        }
+            printf("ACK message has been sent!\n");   
+        } 
     }
-
-   close(socketFD);
+ 
+   close(socketFD);   
 
     return 0;
 }

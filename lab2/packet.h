@@ -19,7 +19,7 @@ int serialize(const struct packet *pack, char *buff) {
 
     int headerLen = sprintf(buff, "%d:%d:%d:%s:", pack->total_frag, pack->frag_no, pack->size, pack->filename);
 
-    memcpy(buff + headerLen, pack->filedata, sizeof(char) * 1000);
+    memcpy(buff + headerLen, pack->filedata,  1000);
 
     return headerLen;
 }
@@ -38,7 +38,7 @@ void deserialize(struct packet *pack, const char *buff) {
         }
     }
     memset(str, 0, sizeof(str));
-    memcpy(str, buff + curidx, curidx + len);
+    memcpy(str, buff + curidx, len);
     pack->total_frag = atoi(str);
     curidx += len;
     curidx++;
@@ -51,7 +51,7 @@ void deserialize(struct packet *pack, const char *buff) {
         }
     }
     memset(str, 0, sizeof(str));
-    memcpy(str, buff + curidx, curidx + len);
+    memcpy(str, buff + curidx, len);
     pack->frag_no = atoi(str);
     curidx += len;
     curidx++;
@@ -64,7 +64,7 @@ void deserialize(struct packet *pack, const char *buff) {
         }
     }
     memset(str, 0, sizeof(str));
-    memcpy(str, buff + curidx, curidx + len);
+    memcpy(str, buff + curidx, len);
     pack->size = atoi(str);
     curidx += len;
     curidx++;
@@ -77,13 +77,17 @@ void deserialize(struct packet *pack, const char *buff) {
         }
     }
     memset(str, 0, sizeof(str));
-    memcpy(pack->filename, buff + curidx, curidx + len);
-    curidx += len;
+    memcpy(str, buff + curidx, len);
+    printf("@@@%s@@@\n", str);
+    //memset(pack->filename, 0, sizeof(pack->filename));
+    strcpy(pack->filename, str);
+    //pack->filename = "";
+    curidx += len; 
     curidx++;
 
     //store file data in to pack
     memset(str, 0, sizeof(str));
-    memcpy(pack->filedata, buff + curidx, pack->size + 1);
+    memcpy(pack->filedata, buff + curidx, pack->size);
 
     //print packet message, for debug usage
     printf("totalfrag = %d\n", pack->total_frag);

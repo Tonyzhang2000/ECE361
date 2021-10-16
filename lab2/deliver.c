@@ -115,7 +115,7 @@ int main(int argc, char const * argv[]) {
         //preparing packets, store packet data
         printf("Preparing packet number %d...", curNum + 1);
         struct packet pack;
-        memset(pack.filedata, '\0', 1000);
+        memset(pack.filedata, 0, 1000);
         fread((void*) pack.filedata, sizeof(char), 1000, file);
         pack.total_frag = numberPackets;
         pack.frag_no = curNum;
