@@ -53,9 +53,10 @@ int main(int argc, char const * argv[]) {
     //check if recvfrom is successful
     if(bytesReceive == -1){
         printf("recvfrom error...\n");
-    }else{
-        printf("%d bytes received!\n", bytesReceive);  //wo jue de ying gai xian xie deliver.c
     }
+    // else{
+    //     printf("%d bytes received!\n", bytesReceive); 
+    // }
 
     //check if the client is sending "ftp" or not
     if(strcmp(buff, "ftp") == 0){
@@ -80,18 +81,21 @@ int main(int argc, char const * argv[]) {
     FILE * file;
 
     while(current_packet_num < total_packet_num) {
-
+        //char recvItem[2000];                          //放里面的话，每次都是一个新的recvitem，貌似filedata就会一直读到2000bytes，然后ack msg就send不出去了因为他满了，你试试
         //initialize packet to receive imformation
         struct packet pack;
         memset(pack.filedata, 0, 1000 * sizeof(char));
         memset(recvItem, 0, sizeof(recvfrom)); 
+        pack.filename = (char *)malloc(MAXBUFLEN);
+        
 
         //initialize string to receive message in recvfrom(), set the string size to 2000
         struct sockaddr_storage deliverIn;
         socklen_t lenDeliverIn = sizeof(deliverIn);
-        recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &deliverIn, &lenDeliverIn);
+        recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &deliverIn, &lenDeliverIn); //一定要delcare一个新的sockaddr吗，用之前的好像也没啥问题
+        //recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &socketOutput, &lenOutput);
 
-        printf("Message received: %s\n", &recvItem);
+        //printf("Message received: %s\n", recvItem);
 
         //now that we received the message, we start to deserialize the packet
         deserialize(&pack, recvItem);
@@ -101,29 +105,31 @@ int main(int argc, char const * argv[]) {
             char new[] = "new_";
             strcat(new, pack.filename);
             file = fopen(new, "w");
-            printf("%s", new);
+            printf("new file name: %s\n", new);
             if(file != NULL) {
-                printf("File created");
+                printf("File created\n");
             } else {
-                printf("File created failed");
+                printf("File created failed\n");
             }
         }
-         
+        
         fwrite(pack.filedata, sizeof(char), pack.size, file); 
         
-        
-
         //update total packet number and current packet num
         total_packet_num = pack.total_frag; 
         current_packet_num++;
 
+        printf("Packet %d recieved (%d bytes of data)\n", current_packet_num, pack.size);
+
         //After everything is done, send the ACK message tell the deliver to send a new packet
-        if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) {     
+        if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) {
             printf("Error! Can't send ACK message\n");  
             return 0;
         } else {
             printf("ACK message has been sent!\n");     
-        }  
+        }
+       
+        free(pack.filename);
     }
 
     fclose(file);
@@ -132,4 +138,3 @@ int main(int argc, char const * argv[]) {
 
     return 0;
 }
-

@@ -105,39 +105,42 @@ int main(int argc, char const * argv[]) {
 
     fseek(file, 0, SEEK_END);  //set the pointer to the end of the file
     int numData = ftell(file);
+    //printf("number of bytes of send file: %d\n", numData);
     int numberPackets = numData / 1000 + 1; 
     fseek(file, 0, SEEK_SET);  //set the pointer to the start of the file
     printf("We need %d packets\n", numberPackets);
 
 
-    for(int curNum = 0;curNum < numberPackets;curNum++) {
+    for(int curNum = 0; curNum < numberPackets; curNum++) {
 
         //preparing packets, store packet data
-        printf("Preparing packet number %d...", curNum + 1);
+        //printf("Preparing packet number %d...\n", curNum + 1);
         struct packet pack;
         memset(pack.filedata, 0, 1000);
         fread((void*) pack.filedata, sizeof(char), 1000, file);
+        //printf("bytes of packet data: %d\n", sizeof(pack.filedata));
         pack.total_frag = numberPackets;
-        pack.frag_no = curNum;
+        pack.frag_no = curNum + 1; //frag_no 应该是从1开始
         if(curNum == numberPackets - 1) {
             pack.size = numData % 1000;
             if(pack.size == 0) pack.size = 1000;
         } else pack.size = 1000;
         pack.filename = file_to_cp;
-        printf("Finished!\n");
-        printf("%d\n", pack.size);
+        //printf("Finished, pack size: %d\n", pack.size);
         //我操我写到这儿发现packet没有存在的意义
 
         //Item that actually sent
         char sentItem[2000]; 
 
         //store packet content in the item and calculate the length
+   
         int packSize = serialize(&pack, sentItem);
+        //printf("header file length: %d\n", packSize);
         packSize += pack.size;
 
         //debug message
-        printf("packet length: %d, buffsize: %d\n", packSize, sizeof(sentItem));
-        printf("%s\n", sentItem);
+        // printf("packet length: %d, buffsize: %d\n", packSize, sizeof(sentItem));
+        // printf("sent item:%s\n", sentItem);
 
 
         //send packets, size calculation is wrong
@@ -145,7 +148,7 @@ int main(int argc, char const * argv[]) {
             printf("Error! Can't send packet number %d...", curNum+1);
             return 0;
         }  else {
-            printf("Packet number %d has been sent...\n", curNum+1);
+            printf("Packet number %d has been sent (%d bytes of data)\n", curNum+1, pack.size);
         }
 
         //After we sent the message, we expect an "ACK" message from the server
@@ -167,4 +170,3 @@ int main(int argc, char const * argv[]) {
     close(socketFD);         //prevent any read or write
     return 0;
 }
-
