@@ -62,7 +62,7 @@ int main(int argc, char const * argv[]) {
     socklen_t lenOutput = sizeof(socketOutput);
     
     clock_t start, end;
-    double time_used;
+    clock_t time_used;
     char message[256], file_to_cp[256];
     printf("Input a message of the following form\n\t ftp <file name>\n");
     scanf("%s%s", message, file_to_cp);
@@ -83,9 +83,9 @@ int main(int argc, char const * argv[]) {
     //2. no: exit 
     int msg_receive_from_server = recvfrom(socketFD, (void *) buff, MAXBUFLEN, 0,  (struct sockaddr *) &socketOutput, &lenOutput);
     end = clock();
-    time_used = (double)(end - start)/CLOCKS_PER_SEC;
+    time_used = end - start;
 
-    printf("RTT is %lf seconds.\n", time_used);
+    printf("RTT is %lu usec.\n", time_used); //unit: usec
 
     if(strcmp(buff, "yes") == 0){
         printf("A file transfer can start\n");
