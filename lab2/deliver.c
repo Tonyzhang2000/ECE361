@@ -7,6 +7,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "packet.h"
 
@@ -61,8 +62,11 @@ int main(int argc, char const * argv[]) {
     struct sockaddr_storage socketOutput;
     socklen_t lenOutput = sizeof(socketOutput);
     
-    clock_t start, end;
-    clock_t time_used;
+//    clock_t start, end;
+//    clock_t time_used;
+   // time_t start, end;
+    struct timeval p1, p2;
+    double time_used;
     char message[256], file_to_cp[256];
     printf("Input a message of the following form\n\t ftp <file name>\n");
     scanf("%s%s", message, file_to_cp);
@@ -73,19 +77,26 @@ int main(int argc, char const * argv[]) {
         printf("File doesn't exist!\n");
         return 0;
     }
-
+    
+    int t1 = gettimeofday(&p1, NULL);
     int byteSend = sendto(socketFD, "ftp", 3, 0, serverinfo->ai_addr, serverinfo->ai_addrlen);
 
-    start = clock();
+    //start = time();
+    //int t1 = gettimeofday(&p1, NULL);
+    //time(&start);
+    //p1 = gmtime(&start);
             
     //get msg from server
     //1. yes: print "A file transfer can start"
     //2. no: exit 
     int msg_receive_from_server = recvfrom(socketFD, (void *) buff, MAXBUFLEN, 0,  (struct sockaddr *) &socketOutput, &lenOutput);
-    end = clock();
-    time_used = end - start;
+    //end = time();
+    //time(&end);
+    //p2 = gmtime(&end);
+    int t2 = gettimeofday(&p2, NULL);
+    time_used = p2.tv_usec - p1.tv_usec;
 
-    printf("RTT is %lu usec.\n", time_used); //unit: usec
+    printf("RTT is %.4lf usec.\n", time_used); //unit: usec
 
     if(strcmp(buff, "yes") == 0){
         printf("A file transfer can start\n");
