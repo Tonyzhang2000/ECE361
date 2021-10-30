@@ -90,9 +90,21 @@ int main(int argc, char const * argv[]) {
         
 
         //initialize string to receive message in recvfrom(), set the string size to 2000
-        struct sockaddr_storage deliverIn;
-        socklen_t lenDeliverIn = sizeof(deliverIn);
-        recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &deliverIn, &lenDeliverIn); //一定要delcare一个新的sockaddr吗，用之前的好像也没啥问题
+        while(1) {
+            struct sockaddr_storage deliverIn;
+            socklen_t lenDeliverIn = sizeof(deliverIn);
+
+            //just wait here until deliver timeout
+            recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &deliverIn, &lenDeliverIn);
+            if(rand() % 100 < 1) {
+                //have 1% rate that we drop what we received
+                printf("Drop packets...");
+                continue;
+            }
+            //if not dropped, then we canreach here, exit the loop
+            break;
+        }
+         //一定要delcare一个新的sockaddr吗，用之前的好像也没啥问题
         //recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &socketOutput, &lenOutput);
 
         //printf("Message received: %s\n", recvItem);

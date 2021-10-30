@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
+#include <math.h>
 
 #include "packet.h"
 
@@ -96,6 +97,13 @@ int main(int argc, char const * argv[]) {
     int t2 = gettimeofday(&p2, NULL);
     time_used = p2.tv_usec - p1.tv_usec;
 
+    double samp_rtt = time_used;
+    double est_rtt = 2 * samp_rtt;
+    double alpha = 0.125, beta = 0.25;
+    double dev_rtt = samp_rtt;
+    double time_out_interval = est_rtt + 4 * dev_rtt;
+
+
     printf("RTT is %.4lf usec.\n", time_used); //unit: usec
 
     if(strcmp(buff, "yes") == 0){
@@ -153,28 +161,58 @@ int main(int argc, char const * argv[]) {
         // printf("packet length: %d, buffsize: %d\n", packSize, sizeof(sentItem));
         // printf("sent item:%s\n", sentItem);
 
+        //set timer
+        int sent_num = 0;
 
-        //send packets, size calculation is wrong
-        if(sendto(socketFD, sentItem, packSize, 0, serverinfo->ai_addr, serverinfo->ai_addrlen) == -1) {
-            printf("Error! Can't send packet number %d...", curNum+1);
-            return 0;
-        }  else {
-            printf("Packet number %d has been sent (%d bytes of data)\n", curNum+1, pack.size);
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = time_out_interval;
+
+        if(setsockopt(socketFD, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+            printf("Error!");
         }
 
-        //After we sent the message, we expect an "ACK" message from the server
-        char message[MAXBUFLEN] = {0};
-        struct sockaddr_storage serverOut;
-        socklen_t lenServerOut = sizeof(serverOut);
-        recvfrom(socketFD, (void*) message, MAXBUFLEN, 0, (struct sockaddr *) &serverOut, &lenServerOut);
 
-        //Check if get the "ACK" message
-        if(strcmp(message, "ACK") == 0) {
-            printf("ACK message received!\n");
-        } else {
-            printf("Error! No ACK message received. Exiting...");
+        while(1) {
+            if(sent_num > 3) {
+                printf("Lost connection...");
+                return 0;
+            }
+
+            t1 = gettimeofday(&p1, NULL); 
+            if(sendto(socketFD, sentItem, packSize, 0, serverinfo->ai_addr, serverinfo->ai_addrlen) == -1) {
+                printf("Error! Can't send packet number %d...", curNum+1);
+                return 0;
+            }  else {
+                printf("Packet number %d has been sent (%d bytes of data)\n", curNum+1, pack.size);
+            }
+
+            //After we sent the message, we expect an "ACK" message from the server
+            char message[MAXBUFLEN] = {0};
+            struct sockaddr_storage serverOut;
+            socklen_t lenServerOut = sizeof(serverOut);
+            if(recvfrom(socketFD, (void*) message, MAXBUFLEN, 0, (struct sockaddr *) &serverOut, &lenServerOut) == -1) {
+                //timeout happens, retransmit
+                sent_num++;
+                printf("Start retransmit number %d...", sent_num);
+                continue;
+            }
+
+            //if we reach here, then we receive things successfully, update timeout interval
+            t2 = gettimeofday(&p2, NULL);
+            samp_rtt = p2.tv_usec - p1.tv_usec;
+            est_rtt = alpha * samp_rtt + (1 - alpha) * est_rtt;
+            dev_rtt = (1 - beta) * dev_rtt + beta * fabs(samp_rtt - est_rtt);
+            time_out_interval = est_rtt + 4 * dev_rtt;
+            //Check if get the "ACK" message
+            if(strcmp(message, "ACK") == 0) {
+                //this is what we expect, exit while loop
+                printf("ACK message received!\n");
+                break;
+            } else {
+                printf("Error! No ACK message received. Exiting...");
+            }
         }
-
     }
     
     freeaddrinfo(serverinfo);
