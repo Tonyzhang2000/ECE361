@@ -97,11 +97,14 @@ int main(int argc, char const * argv[]) {
     int t2 = gettimeofday(&p2, NULL);
     time_used = p2.tv_usec - p1.tv_usec;
 
+
+    //set initial rtt
     double samp_rtt = time_used;
     double est_rtt = 2 * samp_rtt;
     double alpha = 0.125, beta = 0.25;
     double dev_rtt = samp_rtt;
     double time_out_interval = est_rtt + 4 * dev_rtt;
+    struct timeval timeout;
 
 
     printf("RTT is %.4lf usec.\n", time_used); //unit: usec
@@ -164,7 +167,6 @@ int main(int argc, char const * argv[]) {
         //set timer
         int sent_num = 0;
 
-        struct timeval timeout;
         timeout.tv_sec = 0;
         timeout.tv_usec = time_out_interval;
 
