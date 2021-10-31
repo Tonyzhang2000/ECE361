@@ -98,13 +98,12 @@ int main(int argc, char const * argv[]) {
             recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &deliverIn, &lenDeliverIn);
             if(rand() % 100 < 1) {
                 //have 1% rate that we drop what we received
-                printf("Drop packets...");
+                printf("Packet dropped...\n");
                 continue;
             }
             //if not dropped, then we canreach here, exit the loop
             break;
         }
-         //一定要delcare一个新的sockaddr吗，用之前的好像也没啥问题
         //recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &socketOutput, &lenOutput);
 
         //printf("Message received: %s\n", recvItem);
@@ -131,14 +130,14 @@ int main(int argc, char const * argv[]) {
         total_packet_num = pack.total_frag; 
         current_packet_num++;
 
-        printf("Packet %d recieved (%d bytes of data)\n", current_packet_num, pack.size);
+        //printf("Packet %d recieved (%d bytes of data)\n", current_packet_num, pack.size);
 
         //After everything is done, send the ACK message tell the deliver to send a new packet
         if(sendto(socketFD, "ACK", 3, 0, (struct sockaddr *) &socketOutput, lenOutput) == -1) {
             printf("Error! Can't send ACK message\n");  
             return 0;
         } else {
-            printf("ACK message has been sent!\n");     
+           // printf("ACK message has been sent!\n");     
         }
        
         free(pack.filename);

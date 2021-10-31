@@ -186,7 +186,7 @@ int main(int argc, char const * argv[]) {
                 printf("Error! Can't send packet number %d...", curNum+1);
                 return 0;
             }  else {
-                printf("Packet number %d has been sent (%d bytes of data)\n", curNum+1, pack.size);
+                //printf("Packet number %d has been sent (%d bytes of data)\n", curNum+1, pack.size);
             }
 
             //After we sent the message, we expect an "ACK" message from the server
@@ -196,7 +196,8 @@ int main(int argc, char const * argv[]) {
             if(recvfrom(socketFD, (void*) message, MAXBUFLEN, 0, (struct sockaddr *) &serverOut, &lenServerOut) == -1) {
                 //timeout happens, retransmit
                 sent_num++;
-                printf("Start retransmit number %d...", sent_num);
+                //printf("Start retransmit number %d...\n", sent_num);
+                printf("Time out! Timeout = %lf, frag no = %d\n", time_out_interval, curNum+1);
                 continue;
             }
 
@@ -209,7 +210,7 @@ int main(int argc, char const * argv[]) {
             //Check if get the "ACK" message
             if(strcmp(message, "ACK") == 0) {
                 //this is what we expect, exit while loop
-                printf("ACK message received!\n");
+                //printf("ACK message received!\n");
                 break;
             } else {
                 printf("Error! No ACK message received. Exiting...");
