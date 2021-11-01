@@ -96,7 +96,7 @@ int main(int argc, char const * argv[]) {
 
             //just wait here until deliver timeout
             recvfrom(socketFD, (void*) recvItem, 2000, 0, (struct sockaddr *) &deliverIn, &lenDeliverIn);
-            if(rand() % 100 < 1) {
+            if(rand() % 100 < 20) {
                 //have 1% rate that we drop what we received
                 printf("Packet dropped...\n");
                 continue;
