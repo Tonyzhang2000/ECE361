@@ -176,8 +176,8 @@ int main(int argc, char const * argv[]) {
 
 
         while(1) {
-            if(sent_num > 3) {
-                printf("Lost connection...");
+            if(sent_num > 7) {
+                printf("Lost connection...\n");
                 return 0;
             }
 
