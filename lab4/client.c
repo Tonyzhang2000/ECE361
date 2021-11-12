@@ -47,8 +47,8 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         } 
 
         if (connect(socketFD, p->ai_addr, p->ai_addrlen) == -1) {
-				close(socketFD);
-				continue;
+			close(socketFD);
+			continue;
 		}
         break;
     }
