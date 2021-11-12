@@ -151,6 +151,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
 
     deserialize(&msg, message);
     
+    //new thread to handle print message
     pthread_create(thread, NULL, printMessage, (void*)&socketFD);
 
     return socketFD;
@@ -163,8 +164,19 @@ int main() {
     pthread_t thread;
     int socketFD = -1;
 
-    while(1) {
+    while(1) { 
+
         fgets(buff, 999, stdin);
+
+        //fix /n at the end of the string
+        char *ptr = buff;
+        while(*ptr) {
+            if(*ptr == '\n') {
+                *ptr = 0;
+                break;
+            }
+            ptr++;
+        }
 
         command = strtok(buff, " ");
 
@@ -229,11 +241,10 @@ int main() {
             }
             //quit
             break;
+        } else {
+            //sendmessage
         }
-
-        //sendmessage
-
     }
-    printf("Quit successfully!");
+    printf("Quit successfully!\n");
     return 0;
 }

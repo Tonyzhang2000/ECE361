@@ -23,7 +23,7 @@ struct Session {
     struct Session *next;
 };
 
-/*
+
 struct Connection {
     int connectionNum;
     int socketnum;
@@ -31,13 +31,22 @@ struct Connection {
     struct User *user;
     struct Connection *next;
 };
-*/
+
+struct Connection connection[5] = {
+    {.connectionNum = 0, .socketnum = -1}, 
+    {.connectionNum = 1, .socketnum = -1},
+    {.connectionNum = 2, .socketnum = -1},
+    {.connectionNum = 3, .socketnum = -1},
+    {.connectionNum = 4, .socketnum = -1},
+};
 
 
-struct User user[3] = {
+struct User user[5] = {
     {.name = "user1", .key = "11"},
     {.name = "user2", .key = "22"},
-    {.name = "user3", .key = "33"}
+    {.name = "user3", .key = "33"},
+    {.name = "user4", .key = "44"},
+    {.name = "user5", .key = "55"}
 };
 
 

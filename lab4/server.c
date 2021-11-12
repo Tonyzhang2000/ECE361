@@ -14,6 +14,10 @@
 #include "packet.h"
 #include "database.h"
 
+void *newUser(void *socketnum) {
+    return NULL;
+}
+
 int main(int argc, char const * argv[]) {
 
     if(argc != 2) {
@@ -70,6 +74,14 @@ int main(int argc, char const * argv[]) {
         printf("New connection established on socket %d.\n", newFD);
 
         //new thread on new socket to receive messages
+        //find the first connection that is avaliable
+        for(int i = 0;i < 5;i++) {
+            if(connection[i].socketnum == -1) {
+                connection[i].socketnum = newFD;
+                pthread_create(&connection[i].thread, NULL, newUser, (void*)&connection[i].socketnum);
+                break;
+            }
+        }
         //pthread_create(thread, NULL, printMessage, (void*)&socketFD);
 
     }
