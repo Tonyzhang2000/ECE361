@@ -32,8 +32,6 @@ int serialize(const struct message *pack, char *buff) {
 
     //clear the string
     memset(buff, 0, 2000);
-    //写了个寂寞，但如果是最后一个packet估计不能这样吧          //这不影响吧反正最后一个packet也到不了1000bytes
-    //can't use sprint for filedata, this is because some bianry file may include special char like '\0
 
     int headerLen = sprintf(buff, "%d:%d:%s:", pack->type, pack->size, pack->source);
 

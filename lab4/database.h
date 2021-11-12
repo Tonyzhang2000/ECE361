@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 
 
@@ -22,11 +23,21 @@ struct Session {
     struct Session *next;
 };
 
+/*
+struct Connection {
+    int connectionNum;
+    int socketnum;
+    pthread_t thread;
+    struct User *user;
+    struct Connection *next;
+};
+*/
+
 
 struct User user[3] = {
-  {.name = "user1", .key = "11"},
-  {.name = "user2", .key = "22"},
-  {.name = "user3", .key = "33"}
+    {.name = "user1", .key = "11"},
+    {.name = "user2", .key = "22"},
+    {.name = "user3", .key = "33"}
 };
 
 

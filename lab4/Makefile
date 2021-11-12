@@ -4,7 +4,7 @@
 # deliver: deliver.o
 # clean:
 # 		rm -f *.o server deliver
-
+LDFLAGS=-pthread
 all: server client 
 server: server.c packet.h database.h
 	gcc server.c -o server

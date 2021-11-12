@@ -14,6 +14,50 @@
 char buff[1000];
 
 //helper functions
+
+//printMessage
+//Use multi-thread to print the reveived message
+void *printMessage(void *socketFD) {
+    int *sockNum = (int*)socketFD;
+    struct message msg;
+    while(1) {
+        char message[1000];
+        int recvNum = recv(*sockNum, message, sizeof message, 0);
+        if(recvNum == -1) {
+            printf("recv() failed...");
+            close(*sockNum);
+            return NULL;
+        }
+        deserialize(&msg, message);
+        if(msg.type == LO_ACK) {
+            printf("Logging out...\n");
+            break;
+        } else if(msg.type == LO_NAK) {
+            printf("Logout failed...\n");
+        } else if(msg.type == JN_ACK) {
+            //When user is logged in and not in other section
+            printf("Successfully joined session: %s.\n", msg.data);
+        } else if(msg.type == JN_NAK) {
+            //When user is currently in other session
+            printf("Join session failed...Error: %s.\n", msg.data);
+        } else if(msg.type == LEAVE_SESS) {
+            printf("Leave section successfully!\n");
+        } else if(msg.type == NS_ACK) {
+            printf("Session created successfully!\n");
+        } else if(msg.type == MESSAGE) {
+            printf("%s: %s\n", msg.source, msg.data);
+        } else if(msg.type == QU_ACK) {
+            printf("Users:\n");
+            printf("Sessions:\n");
+            //todo
+        } else {
+            printf("Unknown message received...");
+        }
+    }
+
+    return NULL;
+}
+
 //login, check if usaerinfo is correct
 //return the socket number
 int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
@@ -47,6 +91,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         } 
 
         if (connect(socketFD, p->ai_addr, p->ai_addrlen) == -1) {
+            printf("connect() failed...");
 			close(socketFD);
 			continue;
 		}
@@ -105,8 +150,8 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
     }
 
     deserialize(&msg, message);
-
-    //pthread_create(*thread, NULL, my_func, (void*)&my_arg);
+    
+    pthread_create(thread, NULL, printMessage, (void*)&socketFD);
 
     return socketFD;
 
