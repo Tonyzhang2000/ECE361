@@ -55,9 +55,7 @@ void *printMessage(void *socketFD) {
         } else if(msg.type == MESSAGE) {
             printf("%s: %s\n", msg.source, msg.data);
         } else if(msg.type == QU_ACK) {
-            printf("Users:\n");
-            printf("Sessions:\n");
-            //todo
+            printf("Users and Session: %s.\n", msg.data);
         } else {
             printf("Unknown message received...");
         }
@@ -249,6 +247,69 @@ void creatSession(int socketFD, char *name, char *sessionID) {
     return;
 }
 
+//List
+void list(int socketFD, char *name) {
+    struct message msg;
+
+    msg.type = QUERY;
+    strcpy(msg.source, name);
+    strcpy(msg.data, "");
+    msg.size = 0;
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("List failed...Reason: send() failed, please try again...");
+    }
+    return;
+}
+
+//quit
+void quit(int socketFD, char *name) {
+
+    struct message msg;
+
+    msg.type = QUIT;
+    strcpy(msg.source, name);
+    strcpy(msg.data, "");
+    msg.size = 0;
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("Quit failed...Reason: send() failed, please try again...");
+    }
+    return;
+}
+
+//sendMessage
+void sendMessage(int socketFD, char *name, char *text) {
+
+    char *str = name;
+    strcat(str, ": ");
+    strcat(str, text);
+    struct message msg;
+
+    msg.type = MESSAGE;
+    strcpy(msg.source, name);
+    strcpy(msg.data, str);
+    msg.size = strlen(msg.data);
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("Send message failed...Reason: send() failed, please try again...");
+    }
+    return;
+}
+
+
 int main() {
 
     char* command;
@@ -319,24 +380,35 @@ int main() {
                 continue;
             }
             //creatsession
+            char *sessionID;
+            sessionID = strtok(NULL, " ");
+            creatSession(socketFD, name, sessionID);
         } else if(strcmp(command, "/list") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
                 continue;
             }
-            char *sessionID;
-            sessionID = strtok(NULL, " ");
-            creatSession(socketFD, name, sessionID);
             //list
+            list(socketFD, name);
         } else if(strcmp(command, "/quit") == 0) {
             if(socketFD != -1) {
                 printf("Please logout first...");
                 continue;
             }
             //quit
+            quit(socketFD, name);
             break;
         } else {
+            if(socketFD == -1) {
+                printf("Please login first...");
+                continue;
+            }
+            char *text;
+            text = strtok(NULL, "\0");
+            strcat(command, text);
+            printf("Text: %s\n", command);
             //sendmessage
+            sendMessage(socketFD, name, command);
         }
     }
     printf("Quit successfully!\n");
