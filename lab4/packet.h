@@ -19,6 +19,10 @@
 #define MESSAGE 10
 #define QUERY 11
 #define QU_ACK 12
+#define LG_ACK 13
+#define LG_NCK 14
+#define NLEAVE_SESS 15
+#define NS_NAK 16
 
 
 struct message {

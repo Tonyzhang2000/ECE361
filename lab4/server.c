@@ -15,6 +15,8 @@
 #include "database.h"
 
 void *newUser(void *socketnum) {
+    int *socknum = (int*)socketnum;
+    
     return NULL;
 }
 

@@ -30,20 +30,28 @@ void *printMessage(void *socketFD) {
         }
         deserialize(&msg, message);
         if(msg.type == LO_ACK) {
-            printf("Logging out...\n");
-            break;
+            printf("Login successfully!\n");
         } else if(msg.type == LO_NAK) {
-            printf("Logout failed...\n");
+            printf("Login failed...Reason: %s\n", msg.data);
         } else if(msg.type == JN_ACK) {
             //When user is logged in and not in other section
             printf("Successfully joined session: %s.\n", msg.data);
+        } else if(msg.type == LG_ACK) {
+            printf("Logging out...");
+            break;
+        } else if(msg.type == LG_NCK) {
+            printf("Logout failed...please try again...");
         } else if(msg.type == JN_NAK) {
             //When user is currently in other session
             printf("Join session failed...Error: %s.\n", msg.data);
         } else if(msg.type == LEAVE_SESS) {
             printf("Leave section successfully!\n");
+        } else if(msg.type == NLEAVE_SESS) {
+            printf("Leave session failed...Error: %s...", msg.data);
         } else if(msg.type == NS_ACK) {
             printf("Session created successfully!\n");
+        } else if(msg.type == NS_NAK) {
+            printf("Creat session failed... Error: %s", msg.data);
         } else if(msg.type == MESSAGE) {
             printf("%s: %s\n", msg.source, msg.data);
         } else if(msg.type == QU_ACK) {
@@ -134,7 +142,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
     char sentItem[2000];
     serialize(&msg, sentItem);
 
-    int sentBytes = send(socketFD, sentItem, strlen(sentItem) + 1, 0);
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
         printf("Send() failed...");
         close(socketFD);
@@ -158,14 +166,99 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
 
 }
 
+//logout
+//if success, return -1, or return the current socket number
+int logout(int socketFD, char *name) {
+
+    struct message msg;
+
+    msg.type = EXIT;
+    strcpy(msg.source, name);
+    strcpy(msg.data, "");
+    msg.size = 0;
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("logout failed...");
+        return socketFD;
+    }
+    return -1;
+}
+
+//joinsession
+void joinSession(int socketFD, char *name, char *sessionID) {
+    struct message msg;
+
+    msg.type = JOIN;
+    strcpy(msg.source, name);
+    strcpy(msg.data, sessionID);
+    msg.size = strlen(msg.data);
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("Creat session failed...Reason: send() failed, please try again...");
+    }
+    return;
+}
+
+//leaveSession
+//是不是可以declare一个全局的bool, 看是不是已经in section
+//这样的话join也能稍微简单一点
+void leaveSession(int socketFD, char *name) {
+
+    struct message msg;
+
+    msg.type = LEAVE_SESS;
+    strcpy(msg.source, name);
+    strcpy(msg.data, "");
+    msg.size = 0;
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("Leave session failed...Reason: send() failed, please try again...");
+    }
+    return;
+}
+
+//creatSession
+void creatSession(int socketFD, char *name, char *sessionID) {
+
+    struct message msg;
+
+    msg.type = NEW_SESS;
+    strcpy(msg.source, name);
+    strcpy(msg.data, sessionID);
+    msg.size = strlen(sessionID);
+
+    char sentItem[2000];
+    serialize(&msg, sentItem);
+
+    int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
+    if(sentBytes == -1) {
+        printf("Creat session failed...Reason: send() failed, please try again...");
+    }
+    return;
+}
+
 int main() {
 
     char* command;
+    char *name, *key, *ip, *port;
     pthread_t thread;
     int socketFD = -1;
 
     while(1) { 
 
+        memset(buff, 0, sizeof buff);
         fgets(buff, 999, stdin);
 
         //fix /n at the end of the string
@@ -187,7 +280,6 @@ int main() {
                 printf("The user has already logged in...");
                 continue;
             }
-            char *name, *key, *ip, *port;
             name = strtok(NULL, " ");
             key = strtok(NULL, " ");
             ip = strtok(NULL, " ");
@@ -204,35 +296,37 @@ int main() {
                 continue;
             }
             //logout
+            socketFD = logout(socketFD, name);
         } else if(strcmp(command, "/joinsession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
                 continue;
             }
+            char *sessionID;
+            sessionID = strtok(NULL, " ");
             //joinsession
+            joinSession(socketFD, name, sessionID);
         } else if(strcmp(command, "/leavesession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
                 continue;
             }
             //leavesession
+            leaveSession(socketFD, name);
         } else if(strcmp(command, "/creatsession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
                 continue;
             }
             //creatsession
-        } else if(strcmp(command, "/joinsession") == 0) {
-            if(socketFD == -1) {
-                printf("Please login first...");
-                continue;
-            }
-            //joinsession
         } else if(strcmp(command, "/list") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
                 continue;
             }
+            char *sessionID;
+            sessionID = strtok(NULL, " ");
+            creatSession(socketFD, name, sessionID);
             //list
         } else if(strcmp(command, "/quit") == 0) {
             if(socketFD != -1) {
