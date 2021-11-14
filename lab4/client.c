@@ -64,7 +64,7 @@ void *printMessage(void *socketFD) {
     return NULL;
 }
 
-//login, check if usaerinfo is correct
+//login, check if userinfo is correct
 //return the socket number
 int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
 

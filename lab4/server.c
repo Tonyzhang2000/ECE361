@@ -14,6 +14,9 @@
 #include "packet.h"
 #include "database.h"
 
+
+
+
 void *newUser(void *socketnum) {
     int *socknum = (int*)socketnum;
     
@@ -67,11 +70,16 @@ int main(int argc, char const * argv[]) {
         return 0;
     }
 
+
     while(1) {
         struct sockaddr_storage their_addr;
         socklen_t addr_size;
         addr_size = sizeof their_addr;
         int newFD = accept(socketFD, (struct sockaddr *)&their_addr, &addr_size);
+        if(newFD == -1){
+            printf("Fail to establish new connection on socket\n");
+            break;
+        }
 
         printf("New connection established on socket %d.\n", newFD);
 
