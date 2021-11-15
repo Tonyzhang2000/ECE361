@@ -12,6 +12,7 @@
 #include "packet.h"
 
 char buff[1000];
+bool inSession;
 
 //helper functions
 
@@ -36,6 +37,7 @@ void *printMessage(void *socketFD) {
         } else if(msg.type == JN_ACK) {
             //When user is logged in and not in other section
             printf("Successfully joined session: %s.\n", msg.data);
+            inSession = true;
         } else if(msg.type == LG_ACK) {
             printf("Logging out...");
             break;
@@ -46,8 +48,7 @@ void *printMessage(void *socketFD) {
             printf("Join session failed...Error: %s.\n", msg.data);
         } else if(msg.type == LEAVE_SESS) {
             printf("Leave section successfully!\n");
-        } else if(msg.type == NLEAVE_SESS) {
-            printf("Leave session failed...Error: %s...", msg.data);
+            inSession = false;
         } else if(msg.type == NS_ACK) {
             printf("Session created successfully!\n");
         } else if(msg.type == NS_NAK) {
@@ -316,6 +317,7 @@ int main() {
     char *name, *key, *ip, *port;
     pthread_t thread;
     int socketFD = -1;
+    inSession = false;
 
     while(1) { 
 
@@ -363,6 +365,10 @@ int main() {
                 printf("Please login first...");
                 continue;
             }
+            if(inSession == true) {
+                printf("Join session failed...already in session...");
+                continue;
+            }
             char *sessionID;
             sessionID = strtok(NULL, " ");
             //joinsession
@@ -372,11 +378,19 @@ int main() {
                 printf("Please login first...");
                 continue;
             }
+            if(inSession == false) {
+                printf("You are currently not in any session...");
+                continue;
+            }
             //leavesession
             leaveSession(socketFD, name);
         } else if(strcmp(command, "/creatsession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
+                continue;
+            }
+            if(inSession == true) {
+                printf("Creat session failed...already in session...");
                 continue;
             }
             //creatsession
@@ -401,6 +415,10 @@ int main() {
         } else {
             if(socketFD == -1) {
                 printf("Please login first...");
+                continue;
+            }
+            if(inSession == false) {
+                printf("You are currently not in any session, please join a session first...");
                 continue;
             }
             char *text;
