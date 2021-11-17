@@ -143,7 +143,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("Send() failed...");
+        printf("Send() failed...\n");
         close(socketFD);
         return -1;
     }
@@ -151,15 +151,21 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
     char message[100] = {0};
     int recvBytes = recv(socketFD, message, sizeof message, 0);
     if(recvBytes == -1) {
-        printf("recv() failed...");
+        printf("recv() failed...\n");
         close(socketFD);
         return -1;
     }
 
+    //printf("message received from server: %s\n", message);
     deserialize(&msg, message);
-    
+    //这是不是得确认一下LO_ACK
     //new thread to handle print message
-    pthread_create(thread, NULL, printMessage, (void*)&socketFD);
+    if(msg.type == LO_ACK){
+        printf("User: %s has sucessfully logged in\n", msg.source);
+        pthread_create(thread, NULL, printMessage, (void*)&socketFD);
+    }else{
+        printf("log in unsucessfully\n");
+    }
 
     return socketFD;
 

@@ -7,23 +7,23 @@
 #include <stdbool.h>
 
 #define LOGIN 0
-#define LO_ACK 1
-#define LO_NAK 2
+#define LO_ACK 1 //s
+#define LO_NAK 2 //s
 #define EXIT 3
 #define JOIN 4
-#define JN_ACK 5
-#define JN_NAK 6
+#define JN_ACK 5 //s
+#define JN_NAK 6 //s
 #define LEAVE_SESS 7
 #define NEW_SESS 8
-#define NS_ACK 9
+#define NS_ACK 9 //s
 #define MESSAGE 10
 #define QUERY 11
-#define QU_ACK 12
+#define QU_ACK 12 //s
 //后面几个是我自己添的，感觉他少了好几个
-#define LG_ACK 13
-#define LG_NCK 14
+#define LG_ACK 13 //s
+#define LG_NCK 14 //s
 //#define NLEAVE_SESS 15
-#define NS_NAK 16
+#define NS_NAK 16 //s
 #define QUIT 17
 
 
@@ -98,3 +98,4 @@ void deserialize(struct message *pack, const char *buff) {
 } 
 
 #endif
+

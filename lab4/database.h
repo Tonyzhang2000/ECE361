@@ -10,10 +10,11 @@
 struct User {
     char name[20];
     char key[10];
-    
     int socketFD;
     struct Session *s;
     bool active;
+    //construct linked list
+    struct User *next;
 };
 
 //define sessions
@@ -50,18 +51,19 @@ struct User user[5] = {
 };
 
 
-void initialize() {
-    for(int i = 0;i < 3;i++) {
+void initialize_user() {
+    for(int i = 0;i < 5;i++) {
         user[i].socketFD = -1;
         user[i].s = NULL;
         user[i].active = false;
+        user[i].next = NULL;
     }
     return;
 }
 
 void printUserInfo() {
     printf("Users information:\n");
-    for(int i = 0;i < 3;i++) {
+    for(int i = 0;i < 5;i++) {
         printf("User name: %s, password: %s", user[i].name, user[i].key);
         if(user[i].active == false) {
             printf(", status: inactive.\n");
@@ -70,4 +72,31 @@ void printUserInfo() {
         }
     }
 }
+
+/***************************For server to handle diff type**********************************/
+//create a new session for the user if the name is available
+//return the newly constructed session
+struct Session* creat_session(struct Session *s_list, char *session_name){
+
+
+}
+
+//insert the user into the session he want to join
+struct Session *join_session(struct Session *s_list, char *session_name, struct User *usr){
+
+
+}
+
+//remove the user from the session he was joined
+struct Session *leave_session(struct Session *s_list, char *session_name, struct User *usr){
+
+}
+
+//when last user in sesion leaves, delete the session
+struct Session *delete_session(struct Session *s_list, char *session_name){
+
+
+}
+
+
 
