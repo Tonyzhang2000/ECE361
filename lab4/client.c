@@ -65,6 +65,8 @@ void *printMessage(void *socketFD) {
     return NULL;
 }
 
+
+//add close socketFD everytime, or it will cause seg fault on the server side.
 //login, check if userinfo is correct
 //return the socket number
 int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
@@ -105,11 +107,13 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         break;
     }
             
-    printf("Connected successfully!\n"); 
 
     if(p == NULL) {
         printf("Connection failed...");
+        close(socketFD);
         return -1;
+    } else {
+        printf("Connected successfully!\n"); 
     }
 
     void *addr;
@@ -165,6 +169,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         pthread_create(thread, NULL, printMessage, (void*)&socketFD);
     }else{
         printf("log in unsucessfully\n");
+        close(socketFD);
     }
 
     return socketFD;
@@ -190,6 +195,7 @@ int logout(int socketFD, char *name) {
         printf("logout failed...");
         return socketFD;
     }
+    close(socketFD);
     return -1;
 }
 
