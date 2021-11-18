@@ -13,6 +13,7 @@
 
 char buff[1000];
 bool inSession;
+bool logedIn;
 
 //helper functions
 
@@ -27,7 +28,7 @@ void *printMessage(void *arg) {
         memset(&msg, 0, sizeof(struct message));
         int recvNum = recv(sockNum, message, 999, 0);
         if(recvNum == -1) {
-            printf("recv() failed...");
+            printf("recv() failed...\n");
             close(sockNum);
             return NULL;
         }
@@ -136,7 +137,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         } 
 
         if (connect(socketFD, p->ai_addr, p->ai_addrlen) == -1) {
-            printf("connect() failed...");
+            printf("connect() failed...\n");
 			close(socketFD);
 			continue;
 		}
@@ -145,7 +146,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
             
 
     if(p == NULL) {
-        printf("Connection failed...");
+        printf("Connection failed...\n");
         close(socketFD);
         return -1;
     } else {
@@ -210,9 +211,10 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         pthread_create(thread, NULL, printMessage, (void*)arg);
     }else{
         printf("\033[0;31m");
-        printf("log in unsucessfully\n");
+        printf("log in unsucessfully...Reason: %s.\n", msg.data);
         printf("\033[0m");
         close(socketFD);
+        return -1;
     }
 
     return socketFD;
@@ -235,7 +237,7 @@ int logout(int socketFD, char *name) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("logout failed...");
+        printf("logout failed...\n");
         return socketFD;
     }
     close(socketFD);
@@ -256,7 +258,7 @@ void joinSession(int socketFD, char *name, char *sessionID) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("Creat session failed...Reason: send() failed, please try again...");
+        printf("Creat session failed...Reason: send() failed, please try again...\n");
     }
     return;
 }
@@ -278,7 +280,7 @@ void leaveSession(int socketFD, char *name) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("Leave session failed...Reason: send() failed, please try again...");
+        printf("Leave session failed...Reason: send() failed, please try again...\n");
     }
     return;
 }
@@ -298,7 +300,7 @@ void creatSession(int socketFD, char *name, char *sessionID) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("Creat session failed...Reason: send() failed, please try again...");
+        printf("Creat session failed...Reason: send() failed, please try again...\n");
     }
     return;
 }
@@ -317,7 +319,7 @@ void list(int socketFD, char *name) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("List failed...Reason: send() failed, please try again...");
+        printf("List failed...Reason: send() failed, please try again...\n");
     }
     return;
 }
@@ -337,7 +339,7 @@ void quit(int socketFD, char *name) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("Quit failed...Reason: send() failed, please try again...");
+        printf("Quit failed...Reason: send() failed, please try again...\n");
     }
     return;
 }
@@ -361,7 +363,7 @@ void sendMessage(int socketFD, char *name, char *text) {
 
     int sentBytes = send(socketFD, sentItem, strlen(sentItem), 0);
     if(sentBytes == -1) {
-        printf("Send message failed...Reason: send() failed, please try again...");
+        printf("Send message failed...Reason: send() failed, please try again...\n");
     }
     return;
 }
@@ -374,14 +376,21 @@ int main() {
     pthread_t thread;
     int socketFD = -1;
     inSession = false;
+    logedIn = false;
 
     while(1) { 
 
         memset(buff, 0, sizeof buff);
-        fgets(buff, 999, stdin);
-
+        printf(">>");
+        fgets(buff, 1000, stdin);
         //fix /n at the end of the string
+        //fix the empty input
         char *ptr = buff;
+        while(*ptr == ' ') ptr++;
+        if(*ptr == '\n') {
+            printf("Empty input...\n");
+            continue;
+        }
         while(*ptr) {
             if(*ptr == '\n') {
                 *ptr = 0;
@@ -391,12 +400,16 @@ int main() {
         }
 
         command = strtok(buff, " ");
+        if(command == "") {
+            printf("Empty!\n");
+            continue;
+        }
 
         if(strcmp(command, "/login") == 0) {
 
             //login
             if(socketFD != -1) {
-                printf("The user has already logged in...");
+                printf("The user has already logged in...\n");
                 continue;
             }
             name = strtok(NULL, " ");
@@ -404,25 +417,25 @@ int main() {
             ip = strtok(NULL, " ");
             port = strtok(NULL, " ");
             if(name == NULL) {
-                printf("Invalid input, please try again.");
+                printf("Invalid input, please try again.\n");
                 continue;
             }
             socketFD = login(name, key, ip, port, &thread);
 
         } else if(strcmp(command, "/logout") == 0) {
             if(socketFD == -1) {
-                printf("Please login first...");
+                printf("Please login first...\n");
                 continue;
             }
             //logout
             socketFD = logout(socketFD, name);
         } else if(strcmp(command, "/joinsession") == 0) {
             if(socketFD == -1) {
-                printf("Please login first...");
+                printf("Please login first...\n");
                 continue;
             }
             if(inSession == true) {
-                printf("Join session failed...already in session...");
+                printf("Join session failed...already in session...\n");
                 continue;
             }
             char *sessionID;
@@ -431,22 +444,22 @@ int main() {
             joinSession(socketFD, name, sessionID);
         } else if(strcmp(command, "/leavesession") == 0) {
             if(socketFD == -1) {
-                printf("Please login first...");
+                printf("Please login first...\n");
                 continue;
             }
             if(inSession == false) {
-                printf("You are currently not in any session...");
+                printf("You are currently not in any session...\n");
                 continue;
             }
             //leavesession
             leaveSession(socketFD, name);
         } else if(strcmp(command, "/createsession") == 0) {
             if(socketFD == -1) {
-                printf("Please login first...");
+                printf("Please login first...\n");
                 continue;
             }
             if(inSession == true) {
-                printf("Creat session failed...already in session...");
+                printf("Creat session failed...already in session...\n");
                 continue;
             }
             //creatsession
@@ -455,26 +468,26 @@ int main() {
             creatSession(socketFD, name, sessionID);
         } else if(strcmp(command, "/list") == 0) {
             if(socketFD == -1) {
-                printf("Please login first...");
+                printf("Please login first...\n");
                 continue;
             }
             //list
             list(socketFD, name);
         } else if(strcmp(command, "/quit") == 0) {
             if(socketFD != -1) {
-                printf("Please logout first...");
+                printf("Please logout first...\n");
                 continue;
             }
             //quit
-            quit(socketFD, name);
+            //quit(socketFD, name);
             break;
         } else {
             if(socketFD == -1) {
-                printf("Please login first...");
+                printf("Please login first...\n");
                 continue;
             }
             if(inSession == false) {
-                printf("You are currently not in any session, please join a session first...");
+                printf("You are currently not in any session, please join a session first...\n");
                 continue;
             }
             char *text;
