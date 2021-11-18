@@ -353,7 +353,7 @@ void sendMessage(int socketFD, char *name, char *text) {
     msg.type = MESSAGE;
     strcpy(msg.source, name);
     strcpy(msg.data, text);
-    printf("sent data: %s\n", msg.data);
+    //printf("sent data: %s\n", msg.data);
     msg.size = strlen(msg.data);
 
     char sentItem[2000];
@@ -479,11 +479,13 @@ int main() {
             }
             char *text;
             text = strtok(NULL, "\0");
-            printf("text1: %s\n", text);
-            sprintf(command, "%s %s", command, text);
+            //printf("text1: %s\n", text);
+            if(text != NULL){
+                sprintf(command, "%s %s", command, text);
+            }
             // strcat(command, "");
             // strcat(command, text);
-            printf("Text: %s\n", command);
+            //printf("Text: %s\n", command);
             //sendmessage
             sendMessage(socketFD, name, command);
         }

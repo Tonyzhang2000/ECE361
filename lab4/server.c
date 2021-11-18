@@ -51,7 +51,9 @@ void *newUser(void *arg) {
             close(sockNum);
             exit(1);
         }
-
+        if(recvBytes == 0){
+            continue;
+        }
         //printf("message receive from client: %s\n", message);
         deserialize(&msg_recv, message);
         memset(&msg_sent, 0, sizeof(struct message));
@@ -180,10 +182,27 @@ void *newUser(void *arg) {
                 char sentItem[2000];
                 serialize(&msg_sent, sentItem);
                 printf("sent Item: %s\n", sentItem);
-                int bytesSent = send(sockNum, sentItem, strlen(sentItem), 0);
-                if(bytesSent == -1){
-                    printf("send() fails...");
+                
+                //send msg to the user who are in the session
+                struct Session *curr = active_session_list;
+                while(curr != NULL){
+                    if(strcmp(curr->id, session_join) == 0){
+                        struct User *curr_u = curr->user;
+                        while(curr_u != NULL){
+                            int bytesSent = send(curr_u->socketFD, sentItem, strlen(sentItem), 0);
+                            if(bytesSent == -1){
+                                printf("send() fails...");
+                            }
+                            curr_u = curr_u->next;
+                        }
+                        break;
+                    }
+                    curr = curr->next;
                 }
+                // int bytesSent = send(sockNum, sentItem, strlen(sentItem), 0);
+                // if(bytesSent == -1){
+                //     printf("send() fails...");
+                // }
                 send2user = false;
             }else if(msg_recv.type == QUERY){
                 printf("user wants to query\n");
