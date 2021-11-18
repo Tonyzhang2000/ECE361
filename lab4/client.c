@@ -18,53 +18,91 @@ bool inSession;
 
 //printMessage
 //Use multi-thread to print the reveived message
-void *printMessage(void *socketFD) {
-    int *sockNum = (int*)socketFD;
+void *printMessage(void *arg) {
+    int sockNum = *(int *) arg;
+    free(arg);
     struct message msg;
     while(1) {
         char message[1000];
-        int recvNum = recv(*sockNum, message, sizeof message, 0);
+        memset(&msg, 0, sizeof(struct message));
+        int recvNum = recv(sockNum, message, 999, 0);
         if(recvNum == -1) {
             printf("recv() failed...");
-            close(*sockNum);
+            close(sockNum);
             return NULL;
         }
         deserialize(&msg, message);
         if(msg.type == LO_ACK) {
+            printf("\033[0;32m");
             printf("Login successfully!\n");
+            printf("\033[0m");
         } else if(msg.type == LO_NAK) {
+            printf("\033[0;31m");
             printf("Login failed...Reason: %s\n", msg.data);
+            printf("\033[0m");
         } else if(msg.type == JN_ACK) {
             //When user is logged in and not in other section
+            printf("\033[0;32m");
             printf("Successfully joined session: %s.\n", msg.data);
+            printf("\033[0m");
             inSession = true;
         } else if(msg.type == LG_ACK) {
-            printf("Logging out...");
+            printf("\033[0;32m");
+            printf("Logging out...\n");
+            printf("\033[0m");
             break;
         } else if(msg.type == LG_NCK) {
-            printf("Logout failed...please try again...");
+            printf("\033[0;31m");
+            printf("Logout failed...please try again...\n");
+            printf("\033[0m");
         } else if(msg.type == JN_NAK) {
             //When user is currently in other session
-            printf("Join session failed...Error: %s.\n", msg.data);
+            printf("\033[0;31m");
+            printf("Join session failed...Error: %s\n", msg.data);
+            printf("\033[0m");
         } else if(msg.type == LEAVE_SESS) {
+            printf("\033[0;32m");
             printf("Leave section successfully!\n");
+            printf("\033[0m");
             inSession = false;
         } else if(msg.type == NS_ACK) {
+            printf("\033[0;32m");
             printf("Session created successfully!\n");
+            printf("\033[0m");
+            inSession = true;
         } else if(msg.type == NS_NAK) {
-            printf("Creat session failed... Error: %s", msg.data);
+            printf("\033[0;31m");
+            printf("Creat session failed... Error: %s\n", msg.data);
+            printf("\033[0m");
         } else if(msg.type == MESSAGE) {
+            printf("\033[0;34m");
             printf("%s: %s\n", msg.source, msg.data);
+            printf("\033[0m");
         } else if(msg.type == QU_ACK) {
-            printf("Users and Session: %s.\n", msg.data);
+            printf("\033[0;33m");
+            //printf("Users and Session: %s\n", msg.data);
+            char *text = strtok(msg.data, "-");
+            //printf("text: %s\n", text);
+            printf("%s: \n", text);
+            while(text != NULL){
+                text = strtok(NULL, "-");
+                if(text != NULL){
+                    printf("%s\n", text);
+                }
+            }
+            printf("\033[0m");
         } else {
-            printf("Unknown message received...");
+            printf("\033[0;31m");
+            printf("Unknown message received...\n");
+            printf("\033[0m");
         }
     }
 
     return NULL;
 }
 
+
+//add close socketFD everytime, or it will cause seg fault on the server side.
 //login, check if userinfo is correct
 //return the socket number
 int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
@@ -105,11 +143,13 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
         break;
     }
             
-    printf("Connected successfully!\n"); 
 
     if(p == NULL) {
         printf("Connection failed...");
+        close(socketFD);
         return -1;
+    } else {
+        printf("Connected successfully!\n"); 
     }
 
     void *addr;
@@ -161,10 +201,18 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
     //这是不是得确认一下LO_ACK
     //new thread to handle print message
     if(msg.type == LO_ACK){
+        //printf("login socketFD: %d, %d\n", socketFD);
+        int *arg = malloc(sizeof(int));
+        *arg = socketFD;
+        printf("\033[0;32m");
         printf("User: %s has sucessfully logged in\n", msg.source);
-        pthread_create(thread, NULL, printMessage, (void*)&socketFD);
+        printf("\033[0;3m");
+        pthread_create(thread, NULL, printMessage, (void*)arg);
     }else{
+        printf("\033[0;31m");
         printf("log in unsucessfully\n");
+        printf("\033[0m");
+        close(socketFD);
     }
 
     return socketFD;
@@ -190,6 +238,7 @@ int logout(int socketFD, char *name) {
         printf("logout failed...");
         return socketFD;
     }
+    close(socketFD);
     return -1;
 }
 
@@ -297,13 +346,14 @@ void quit(int socketFD, char *name) {
 void sendMessage(int socketFD, char *name, char *text) {
 
     char *str = name;
-    strcat(str, ": ");
-    strcat(str, text);
+    //strcat(str, ": ");
+    //strcat(str, text);
     struct message msg;
 
     msg.type = MESSAGE;
     strcpy(msg.source, name);
-    strcpy(msg.data, str);
+    strcpy(msg.data, text);
+    printf("sent data: %s\n", msg.data);
     msg.size = strlen(msg.data);
 
     char sentItem[2000];
@@ -390,7 +440,7 @@ int main() {
             }
             //leavesession
             leaveSession(socketFD, name);
-        } else if(strcmp(command, "/creatsession") == 0) {
+        } else if(strcmp(command, "/createsession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...");
                 continue;
@@ -429,7 +479,10 @@ int main() {
             }
             char *text;
             text = strtok(NULL, "\0");
-            strcat(command, text);
+            printf("text1: %s\n", text);
+            sprintf(command, "%s %s", command, text);
+            // strcat(command, "");
+            // strcat(command, text);
             printf("Text: %s\n", command);
             //sendmessage
             sendMessage(socketFD, name, command);

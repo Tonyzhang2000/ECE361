@@ -21,9 +21,9 @@
 #define QU_ACK 12 //s
 //后面几个是我自己添的，感觉他少了好几个
 #define LG_ACK 13 //s
-#define LG_NCK 14 //s
+#define LG_NCK 14
 //#define NLEAVE_SESS 15
-#define NS_NAK 16 //s
+#define NS_NAK 16
 #define QUIT 17
 
 
