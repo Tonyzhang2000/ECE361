@@ -25,6 +25,7 @@ void *printMessage(void *arg) {
     struct message msg;
     while(1) {
         char message[1000];
+        memset(message, 0, sizeof(char)*1000);
         memset(&msg, 0, sizeof(struct message));
         int recvNum = recv(sockNum, message, 999, 0);
         if(recvNum == -1) {
@@ -173,6 +174,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
     freeaddrinfo(serverinfo);
 
     struct message msg;
+    memset(&msg, 0, sizeof(struct message));
 
     msg.type = LOGIN;
     strcpy(msg.source, name);
@@ -198,6 +200,7 @@ int login(char *name, char *key, char *ip, char *port, pthread_t *thread) {
     }
 
     //printf("message received from server: %s\n", message);
+    memset(&msg, 0, sizeof(struct message));
     deserialize(&msg, message);
     //这是不是得确认一下LO_ACK
     //new thread to handle print message
