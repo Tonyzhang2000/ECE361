@@ -98,7 +98,7 @@ void *printMessage(void *arg) {
             printf("\033[0m");
         }
     }
-
+    printf(">>");
     return NULL;
 }
 
@@ -381,7 +381,9 @@ int main() {
     while(1) { 
 
         memset(buff, 0, sizeof buff);
-        printf(">>");
+        if(logedIn == false) {
+            printf(">>");
+        }
         fgets(buff, 1000, stdin);
         //fix /n at the end of the string
         //fix the empty input
@@ -496,8 +498,8 @@ int main() {
             if(text != NULL){
                 sprintf(command, "%s %s", command, text);
             }
-            // strcat(command, "");
-            // strcat(command, text);
+            //strcat(command, "");
+            //strcat(command, text);
             //printf("Text: %s\n", command);
             //sendmessage
             sendMessage(socketFD, name, command);
