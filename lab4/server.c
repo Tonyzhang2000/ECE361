@@ -145,7 +145,7 @@ void *newUser(void *arg) {
 
                     pthread_mutex_lock(&session_mutex);
                     active_session_list = join_session(active_session_list, session_id, user[user_id]);
-                    pthread_mutex_unlock(&user_mutex);
+                    pthread_mutex_unlock(&session_mutex);
 
                     pthread_mutex_lock(&user_mutex);
                     user[user_id].in_session = true;
