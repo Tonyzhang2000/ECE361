@@ -39,8 +39,6 @@ void *newUser(void *arg) {
     char session_join[200];
 
     while(1){
-        //char recv_message[1000];
-        //char sent_message[1000];
         bool send2user = false;
         memset(message, 0, sizeof(char)*1000);
         memset(&msg_recv, 0, sizeof(struct message));
@@ -52,9 +50,10 @@ void *newUser(void *arg) {
             exit(1);
         }
         if(recvBytes == 0){
-            continue;
+            to_exit = true;
+            printf("hi\n");
+            break;
         }
-        //printf("message receive from client: %s\n", message);
         deserialize(&msg_recv, message);
         memset(&msg_sent, 0, sizeof(struct message));
 
@@ -71,10 +70,6 @@ void *newUser(void *arg) {
                 if(user[user_id].in_session && !session_exist(active_session_list, session_id)){
                     printf("get here\n");
                     msg_sent.type = NS_NAK;
-                    //strcpy(msg_sent.source, user[user_id].name);
-                    //send2user = true;
-                    //int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
-                    //strcpy((char *)(msg_sent.data), "You have already joined other session");
                     printf("get here11\n");
                     int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
                     strcpy((char *)(msg_sent.data + cursor), " already joined a session before");
@@ -83,8 +78,6 @@ void *newUser(void *arg) {
                 }else if(session_exist(active_session_list, session_id)){
                     printf("get here2\n");
                     msg_sent.type = NS_NAK;
-                    //strcpy(msg_sent.source, user[user_id].name);
-                    //send2user = true;
                     int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
                     strcpy((char *)(msg_sent.data+cursor), " already exist! ");
                 }else{
@@ -106,7 +99,6 @@ void *newUser(void *arg) {
 
                     //strcpy(msg_sent.source, user[user_id].name);
                     sprintf((char *)(msg_sent.data), "%s", session_id);
-                    //send2user = true;
                     printf("User %s: Successfully created session %s\n", user[user_id].name, session_id);
                     strcpy((char*)session_join, session_id);
                 }
@@ -199,32 +191,13 @@ void *newUser(void *arg) {
                     }
                     curr = curr->next;
                 }
-                // int bytesSent = send(sockNum, sentItem, strlen(sentItem), 0);
-                // if(bytesSent == -1){
-                //     printf("send() fails...");
-                // }
                 send2user = false;
             }else if(msg_recv.type == QUERY){
                 printf("user wants to query\n");
                 msg_sent.type = QU_ACK;
                 char *uname = user[user_id].name;
                 strcpy(msg_sent.source, uname);
-                //printf("source: %s\n", msg_sent.source);
                 send2user = true;
-                //int cursor = 0;
-                
-                // for(int i = 0; i < 5; ++i){
-                //     if(user[i].active == true){
-                //         //cursor += sprintf((char *)(msg_sent.data) + cursor, "%s", user[i].name);
-                //         strcpy(msg_sent.data, user[i].name);
-                //         //cursor += sprintf((char *)(msg_sent.data) + cursor, "\t%d", user[i].s->id);
-                        
-                //     }
-                //     //msg_sent.data[cursor++] = '\n';
-
-                // }
-                
-                //printf("query result sent to user: %s\n", msg_sent.data);
                 
                 printf("Active session:\n");
                 strcpy(msg_sent.data, "ACTIVE SESSION AND USER-");
@@ -245,6 +218,13 @@ void *newUser(void *arg) {
                     strcat(msg_sent.data, "-");
                     printf("\n");
                 }
+                strcat(msg_sent.data, "no session: ");
+                for(int i = 0; i < 5; ++i){
+                    if(user[i].in_session == false && user[i].active == true){
+                        strcat(msg_sent.data, user[i].name);
+                        strcat(msg_sent.data, " ");
+                    }
+                }
                 printf("query result to user: %s\n", msg_sent.data);
             }
 
@@ -264,8 +244,6 @@ void *newUser(void *arg) {
                 //check if the user is valid
                 //check if the user is already logged in
                 for(int i = 0; i < 5; ++i){
-                    //printf("user%d name: %s, key: %s\n", i, user[i].name, user[i].key);
-                    //printf(user[i].name == user_name);
                     if(strcmp(user[i].name, user_name)==0 && strcmp(user[i].key, key)==0){
                         valid_user = true;
                         if(user[i].active == false){
@@ -333,7 +311,6 @@ void *newUser(void *arg) {
     //the thread need to quit, safely close the connection  
     //delete all the active session to prevent memory leak
     printf("user wants to exit...\n");
-    //close(sockNum);
     user[user_id].in_session = false;
     user[user_id].active = false;
     user[user_id].socketFD = -1;
@@ -355,6 +332,14 @@ void *newUser(void *arg) {
         printf("send() fails...");
         return NULL;
     }
+    
+    for(int i = 0; i < 5; ++i){
+        if(connection[i].socketnum == sockNum){
+            connection[i].socketnum = -1;
+            break;
+        }
+    }
+    
     close(sockNum);
     printf("log out successfully\n");
     return NULL;
@@ -408,33 +393,31 @@ int main(int argc, char const * argv[]) {
     }
 
     initialize_user();
-    //do{
-        while(1) {
-            struct sockaddr_storage their_addr;
-            socklen_t addr_size;
-            addr_size = sizeof their_addr;
-            int newFD = accept(socketFD, (struct sockaddr *)&their_addr, &addr_size);
-            if(newFD == -1){
-                printf("Fail to establish new connection on socket\n");
+    while(1) {
+        struct sockaddr_storage their_addr;
+        socklen_t addr_size;
+        addr_size = sizeof their_addr;
+        int newFD = accept(socketFD, (struct sockaddr *)&their_addr, &addr_size);
+        if(newFD == -1){
+            printf("Fail to establish new connection on socket\n");
+            break;
+        }
+
+        printf("New connection established on socket %d.\n", newFD);
+
+        //new thread on new socket to receive messages
+        //find the first connection that is avaliable
+        for(int i = 0;i < 5;i++) {
+            if(connection[i].socketnum == -1) {
+                connection[i].socketnum = newFD;
+                int *arg = malloc(sizeof(int));
+                *arg = newFD;
+                //pthread_create(&connection[i].thread, NULL, newUser, (void*)&connection[i].socketnum);
+                pthread_create(&connection[i].thread, NULL, newUser, (void*)arg);
                 break;
             }
-
-            printf("New connection established on socket %d.\n", newFD);
-
-            //new thread on new socket to receive messages
-            //find the first connection that is avaliable
-            for(int i = 0;i < 5;i++) {
-                if(connection[i].socketnum == -1) {
-                    connection[i].socketnum = newFD;
-                    int *arg = malloc(sizeof(int));
-                    *arg = newFD;
-                    //pthread_create(&connection[i].thread, NULL, newUser, (void*)&connection[i].socketnum);
-                    pthread_create(&connection[i].thread, NULL, newUser, (void*)arg);
-                    break;
-                }
-            }
         }
-    //}while(1);
+    }
 
     printf("exit successfully!\n");
     return 0;

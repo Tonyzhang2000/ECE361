@@ -13,7 +13,6 @@
 
 char buff[1000];
 bool inSession;
-bool logedIn;
 
 //helper functions
 
@@ -99,7 +98,7 @@ void *printMessage(void *arg) {
             printf("\033[0m");
         }
     }
-    printf(">>");
+   // printf(">>");
     return NULL;
 }
 
@@ -379,14 +378,13 @@ int main() {
     pthread_t thread;
     int socketFD = -1;
     inSession = false;
-    logedIn = false;
 
     while(1) { 
 
         memset(buff, 0, sizeof buff);
-        if(logedIn == false) {
-            printf(">>");
-        }
+
+        sleep(1);
+        printf(">>");
         fgets(buff, 1000, stdin);
         //fix /n at the end of the string
         //fix the empty input
@@ -432,6 +430,7 @@ int main() {
                 printf("Please login first...\n");
                 continue;
             }
+            inSession = false;
             //logout
             socketFD = logout(socketFD, name);
         } else if(strcmp(command, "/joinsession") == 0) {
