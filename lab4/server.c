@@ -69,7 +69,7 @@ void *newUser(void *arg) {
                 char *session_id = msg_recv.data;
                 //check if user has already joined other session
                 if(user[user_id].in_session && !session_exist(active_session_list, session_id)){
-                    printf("get here\n");
+                    //printf("get here\n");
                     msg_sent.type = NS_NAK;
                     //strcpy(msg_sent.source, user[user_id].name);
                     //send2user = true;
@@ -153,7 +153,7 @@ void *newUser(void *arg) {
 
                     strcpy((char*)session_join, session_id);
                     
-                }
+                }     
                 send2user = true;
                 strcpy(msg_sent.source, user[user_id].name);
             }else if(msg_recv.type == LEAVE_SESS){
