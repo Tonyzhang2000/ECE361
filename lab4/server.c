@@ -16,8 +16,7 @@
 
 //global variable
 //struct User *active_user_list = NULL;
-struct Session *active_session_list = NULL;
-int act_user_count = 0;
+//int act_user_count = 0;
 
 pthread_mutex_t session_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t user_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -36,7 +35,8 @@ void *newUser(void *arg) {
     bool to_exit = false;
 
     int user_id = -1;
-    char session_join[200];
+    //char session_join[200];
+    struct Session *session_join = NULL;
 
     while(1){
         bool send2user = false;
@@ -67,15 +67,16 @@ void *newUser(void *arg) {
                 printf("user %s wants to create new session\n", user[user_id].name);
                 char *session_id = msg_recv.data;
                 //check if user has already joined other session
-                if(user[user_id].in_session && !session_exist(active_session_list, session_id)){
-                    //printf("get here\n");
-                    msg_sent.type = NS_NAK;
-                    printf("get here11\n");
-                    int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
-                    strcpy((char *)(msg_sent.data + cursor), " already joined a session before");
-                    printf("msg sent to user: %s", msg_sent.data);
-                   // printf("you have already joined a session, faliled to create new session\n");
-                }else if(session_exist(active_session_list, session_id)){
+                // if(user[user_id].in_session && !session_exist(active_session_list, session_id)){
+                //     //printf("get here\n");
+                //     msg_sent.type = NS_NAK;
+                //     printf("get here11\n");
+                //     int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
+                //     strcpy((char *)(msg_sent.data + cursor), " already joined a session before");
+                //     printf("msg sent to user: %s", msg_sent.data);
+                //    // printf("you have already joined a session, faliled to create new session\n");
+                // }else 
+                if(session_exist(active_session_list, session_id)){
                     printf("get here2\n");
                     msg_sent.type = NS_NAK;
                     int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
@@ -100,7 +101,20 @@ void *newUser(void *arg) {
                     //strcpy(msg_sent.source, user[user_id].name);
                     sprintf((char *)(msg_sent.data), "%s", session_id);
                     printf("User %s: Successfully created session %s\n", user[user_id].name, session_id);
-                    strcpy((char*)session_join, session_id);
+                    //strcpy((char*)session_join, session_id);
+                    if(session_join == NULL){
+                        session_join = malloc(sizeof(struct Session));
+                        strcpy(session_join->id, session_id);
+                        session_join->next = NULL;
+                    }else{
+                        struct Session *ses = session_join;
+                        while(ses->next != NULL){
+                            ses = ses->next;
+                        }
+                        ses->next = malloc(sizeof(struct Session));
+                        strcpy(ses->next->id, session_id);
+                        ses->next->next = NULL;
+                    }
                 }
                 send2user = true;
                 strcpy(msg_sent.source, user[user_id].name);
@@ -117,19 +131,19 @@ void *newUser(void *arg) {
                     printf("Warning: user %s: Failed to join session %s\n", user[user_id].name, session_id);
                 }
                 //user has already joined this session
-                else if(user[user_id].in_session == true){
+                else if(user_in_session(active_session_list, session_id, user[user_id]) == true){
                     msg_sent.type = JN_NAK;
                     int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
                     strcpy((char *)(msg_sent.data + cursor), " has already joined, you don't need to join again");
                     printf("Warning: user %s: Failed to join session %s\n", user[user_id].name, session_id);
                 }
-                //user has already joined other session
-                else if(user_in_session(active_session_list, session_id, user[user_id])){
-                    msg_sent.type = JN_NAK;
-                    //int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
-                    strcpy((char *)(msg_sent.data), "You already joined other session, please leave first and join again");
-                    printf("Warning: user %s: Failed to join session %s\n", user[user_id].name, session_id);
-                }
+                // //user has already joined other session
+                // else if(user_in_session(active_session_list, session_id, user[user_id])){
+                //     msg_sent.type = JN_NAK;
+                //     //int cursor = sprintf((char *)(msg_sent.data), "%s", session_id);
+                //     strcpy((char *)(msg_sent.data), "You already joined other session, please leave first and join again");
+                //     printf("Warning: user %s: Failed to join session %s\n", user[user_id].name, session_id);
+                // }
                 //successfully joined the session
                 else{
                     msg_sent.type = JN_ACK;
@@ -143,53 +157,154 @@ void *newUser(void *arg) {
                     user[user_id].in_session = true;
                     pthread_mutex_unlock(&user_mutex);
 
-                    strcpy((char*)session_join, session_id);
+                    //strcpy((char*)session_join, session_id);
+                    if(session_join == NULL){
+                        session_join = malloc(sizeof(struct Session));
+                        strcpy(session_join->id, session_id);
+                        session_join->next = NULL;
+                    }else{
+                        struct Session *ses = session_join;
+                        while(ses->next != NULL){
+                            ses = ses->next;
+                        }
+                        ses->next = malloc(sizeof(struct Session));
+                        strcpy(ses->next->id, session_id);
+                        ses->next->next = NULL;
+                    }
                     
                 }     
                 send2user = true;
                 strcpy(msg_sent.source, user[user_id].name);
             }else if(msg_recv.type == LEAVE_SESS){
                 printf("User %s wants to leave the session\n", user[user_id].name);
-                msg_sent.type = LEAVE_SESS;
-                strcpy(msg_sent.data, "");
-                strcpy(msg_sent.source, user[user_id].name);
+                //msg_sent.type = LEAVE_SESS;
+                
                 send2user = true;
+                
 
-                pthread_mutex_lock(&session_mutex);
-                active_session_list = leave_session(active_session_list, session_join, user[user_id]);
-                pthread_mutex_unlock(&session_mutex);
+                char session_leave[100]; 
+                strcpy(session_leave, msg_recv.data);
 
-                pthread_mutex_lock(&user_mutex);
-                user[user_id].in_session = false;
-                pthread_mutex_unlock(&user_mutex);
 
-                memset(session_join, 0, sizeof(session_join));
+                //if the session leave is valid session
+                if(session_exist(active_session_list, session_leave) == false){
+                    msg_sent.type = LS_NAK;
+                    strcpy(msg_sent.data, "Session not exists");
+                    strcpy(msg_sent.source, user[user_id].name);
+                }
+                //if the user is currently in session leave
+                else if(user_in_session(active_session_list, session_leave, user[user_id]) == false){
+                    msg_sent.type = LS_NAK;
+                    strcpy(msg_sent.data, "User doesn't join this session");
+                    strcpy(msg_sent.source, user[user_id].name);
+                }else{
+                    msg_sent.type = LEAVE_SESS;
+                    strcpy(msg_sent.data, msg_recv.data);
+                    strcpy(msg_sent.source, user[user_id].name);
+
+                    pthread_mutex_lock(&session_mutex);
+                    active_session_list = leave_session(active_session_list, session_leave, user[user_id]);
+                    pthread_mutex_unlock(&session_mutex);
+
+                    bool in_ses = in_session(active_session_list, user[user_id].name);
+                    // printf("in_session: %d\n", in_ses);
+                    // printf("user in session bool: %d\n", user[user_id].in_session);
+                    pthread_mutex_lock(&user_mutex);
+                    if(!in_ses){
+                        user[user_id].in_session = false;
+                    }
+                    pthread_mutex_unlock(&user_mutex);
+
+                    //delete session from session_list
+                    struct Session *curr = session_join;
+                    struct Session *prev = NULL;
+                    while(curr != NULL){
+                        if(strcmp(curr->id, session_leave) == 0){
+                            if(prev == NULL){
+                                session_join = curr->next;
+                                curr->next = NULL;
+                                free(curr);
+                            }else{
+                                prev->next = curr->next;
+                                curr->next = NULL;
+                                free(curr);
+                            }
+                        }
+                        prev = curr;
+                        curr = curr->next;
+                    }
+                }
+                
             }else if(msg_recv.type == MESSAGE){
                 printf("User %s wants to send message to the session\n", user[user_id].name);
-                msg_sent.type = MESSAGE;
-                strcpy(msg_sent.data, msg_recv.data);
-                strcpy(msg_sent.source, user[user_id].name);
-                msg_sent.size = strlen((char*)(msg_sent.data));
-                
-                char sentItem[2000];
-                serialize(&msg_sent, sentItem);
-                printf("sent Item: %s\n", sentItem);
-                
-                //send msg to the user who are in the session
-                struct Session *curr = active_session_list;
-                while(curr != NULL){
-                    if(strcmp(curr->id, session_join) == 0){
-                        struct User *curr_u = curr->user;
-                        while(curr_u != NULL){
-                            int bytesSent = send(curr_u->socketFD, sentItem, strlen(sentItem), 0);
-                            if(bytesSent == -1){
-                                printf("send() fails...");
-                            }
-                            curr_u = curr_u->next;
-                        }
-                        break;
+                //msg_sent.type = MESSAGE;
+                char *session_sent;
+                char *text;
+
+                session_sent = strtok(msg_recv.data, " ");
+                text = strtok(NULL, "\0");
+
+                if(session_exist(active_session_list, session_sent) == false){
+                    msg_sent.type = MSG_NAK;
+                    strcpy(msg_sent.source, user[user_id].name);
+                    strcpy(msg_sent.data, "Session is not valid, please put the correct session ID");
+
+                    msg_sent.size = strlen((char*)(msg_sent.data));
+                    char sentItem[2000];
+                    serialize(&msg_sent, sentItem);
+                    printf("sent Item: %s\n", sentItem);
+
+                    int bytesSent = send(sockNum, sentItem, strlen(sentItem), 0);
+                    if(bytesSent == -1){
+                        printf("send() fails...");
                     }
-                    curr = curr->next;
+                }else if(user_in_session(active_session_list, session_sent, user[user_id]) == false){
+                    msg_sent.type = MSG_NAK;
+                    strcpy(msg_sent.source, user[user_id].name);
+                    strcpy(msg_sent.data, "you are not in this session, please join first and send message");
+
+                    msg_sent.size = strlen((char*)(msg_sent.data));
+                    char sentItem[2000];
+                    serialize(&msg_sent, sentItem);
+                    printf("sent Item: %s\n", sentItem);
+
+                    int bytesSent = send(sockNum, sentItem, strlen(sentItem), 0);
+                    if(bytesSent == -1){
+                        printf("send() fails...");
+                    }
+                }
+                else{
+                    msg_sent.type = MESSAGE;   
+                    strcpy(msg_sent.data, text);
+
+                    char source[100];
+                    strcpy(source, user[user_id].name);
+                    sprintf(source, "%s [%s]", source, session_sent);
+                    strcpy(msg_sent.source, source);
+                    // printf("msg sent source: %s\n", msg_sent.source);
+                    // printf("msg sent data: %s\n", msg_sent.data);
+                    msg_sent.size = strlen((char*)(msg_sent.data));
+                    
+                    char sentItem[2000];
+                    serialize(&msg_sent, sentItem);
+                    printf("sent Item: %s\n", sentItem);
+                    
+                    //send msg to the user who are in the session
+                    struct Session *curr = active_session_list;
+                    while(curr != NULL){
+                        if(strcmp(curr->id, session_sent) == 0){
+                            struct User *curr_u = curr->user;
+                            while(curr_u != NULL){
+                                int bytesSent = send(curr_u->socketFD, sentItem, strlen(sentItem), 0);
+                                if(bytesSent == -1){
+                                    printf("send() fails...");
+                                }
+                                curr_u = curr_u->next;
+                            }
+                            break;
+                        }
+                        curr = curr->next;
+                    }
                 }
                 send2user = false;
             }else if(msg_recv.type == QUERY){
@@ -338,9 +453,30 @@ void *newUser(void *arg) {
     //clean user in any session info
     if(already_login){
         pthread_mutex_lock(&session_mutex);
-        active_session_list = leave_session(active_session_list, session_join, user[user_id]);
+        struct Session *ses = session_join;
+        while(ses != NULL){
+            active_session_list = leave_session(active_session_list, ses->id, user[user_id]);
+            ses = ses->next;
+        }
         pthread_mutex_unlock(&session_mutex);
     }
+    //free session_join
+    struct Session *cur = session_join;
+    struct Session *pre = NULL;
+    while(cur != NULL){
+        if(pre == NULL){
+            session_join = cur->next;
+            cur->next = NULL;
+            free(cur);
+        }else{
+            pre->next = cur->next;
+            cur->next = NULL;
+            free(cur);
+        }
+        pre = cur;
+        cur = cur->next;
+    }
+
     msg_sent.type = LG_ACK;
     strcpy(msg_sent.data, "");
     strcpy(msg_sent.source, user[user_id].name);

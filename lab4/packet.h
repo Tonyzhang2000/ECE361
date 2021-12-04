@@ -26,6 +26,8 @@
 #define NS_NAK 16
 #define QUIT 17
 #define PRIVATE 18
+#define MSG_NAK 19 
+#define LS_NAK 20
 
 
 struct message {

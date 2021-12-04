@@ -10,9 +10,12 @@
 #include <netinet/in.h>
 
 #include "packet.h"
+#include "database.h"
 
 char buff[1000];
 bool inSession;
+
+int ses_count = 0;
 
 //helper functions
 
@@ -45,6 +48,7 @@ void *printMessage(void *arg) {
             //When user is logged in and not in other section
             printf("\033[0;32m");
             printf("Successfully joined session: %s.\n", msg.data);
+            ses_count++;
             printf("\033[0m");
             inSession = true;
         } else if(msg.type == LG_ACK) {
@@ -63,12 +67,20 @@ void *printMessage(void *arg) {
             printf("\033[0m");
         } else if(msg.type == LEAVE_SESS) {
             printf("\033[0;32m");
-            printf("Leave section successfully!\n");
+            printf("Leave section %s successfully!\n", msg.data);
             printf("\033[0m");
-            inSession = false;
-        } else if(msg.type == NS_ACK) {
+            ses_count--;
+            if(ses_count == 0){
+                inSession = false;
+            }
+        }else if(msg.type == LS_NAK){
+            printf("\033[0;31m");
+            printf("Leave session failed...Error: %s\n", msg.data);
+            printf("\033[0m");
+        }else if(msg.type == NS_ACK) {
             printf("\033[0;32m");
             printf("Session created successfully!\n");
+            ses_count++;
             printf("\033[0m");
             inSession = true;
         } else if(msg.type == NS_NAK) {
@@ -79,7 +91,11 @@ void *printMessage(void *arg) {
             printf("\033[0;34m");
             printf("%s: %s\n", msg.source, msg.data);
             printf("\033[0m");
-        } else if(msg.type == QU_ACK) {
+        }else if(msg.type == MSG_NAK){
+            printf("\033[0;31m");
+            printf("Message can't send, error: %s\n", msg.data);
+            printf("\033[0m");
+        }else if(msg.type == QU_ACK) {
             printf("\033[0;33m");
             //printf("Users and Session: %s\n", msg.data);
             char *text = strtok(msg.data, "-");
@@ -98,10 +114,7 @@ void *printMessage(void *arg) {
             printf("\033[0m");
         }
     }
-<<<<<<< HEAD
-=======
    // printf(">>");
->>>>>>> edeacf1f102ff1b1fddf681d3e4a6d0d7dc7bc9e
     return NULL;
 }
 
@@ -271,14 +284,14 @@ void joinSession(int socketFD, char *name, char *sessionID) {
 //leaveSession
 //是不是可以declare一个全局的bool, 看是不是已经in section
 //这样的话join也能稍微简单一点
-void leaveSession(int socketFD, char *name) {
+void leaveSession(int socketFD, char *name, char* SessionID) {
 
     struct message msg;
 
     msg.type = LEAVE_SESS;
     strcpy(msg.source, name);
-    strcpy(msg.data, "");
-    msg.size = 0;
+    strcpy(msg.data, SessionID);
+    msg.size = strlen((char*)msg.data);
 
     char sentItem[2000];
     serialize(&msg, sentItem);
@@ -403,15 +416,8 @@ int main() {
     while(1) { 
 
         memset(buff, 0, sizeof buff);
-<<<<<<< HEAD
-        sleep(0.5);
-        printf(">>");
-
-=======
-
         sleep(1);
         printf(">>");
->>>>>>> edeacf1f102ff1b1fddf681d3e4a6d0d7dc7bc9e
         fgets(buff, 1000, stdin);
         //fix /n at the end of the string
         //fix the empty input
@@ -459,17 +465,16 @@ int main() {
             }
             inSession = false;
             //logout
-            inSession = false;
             socketFD = logout(socketFD, name);
         } else if(strcmp(command, "/joinsession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...\n");
                 continue;
             }
-            if(inSession == true) {
-                printf("Join session failed...already in session...\n");
-                continue;
-            }
+            // if(inSession == true) {
+            //     printf("Join session failed...already in session...\n");
+            //     continue;
+            // }
             char *sessionID;
             sessionID = strtok(NULL, " ");
             //joinsession
@@ -484,16 +489,18 @@ int main() {
                 continue;
             }
             //leavesession
-            leaveSession(socketFD, name);
+            char *sessionID;
+            sessionID = strtok(NULL, " ");
+            leaveSession(socketFD, name, sessionID);
         } else if(strcmp(command, "/createsession") == 0) {
             if(socketFD == -1) {
                 printf("Please login first...\n");
                 continue;
             }
-            if(inSession == true) {
-                printf("Creat session failed...already in session...\n");
-                continue;
-            }
+            // if(inSession == true) {
+            //     printf("Creat session failed...already in session...\n");
+            //     continue;
+            // }
             //creatsession
             char *sessionID;
             sessionID = strtok(NULL, " ");

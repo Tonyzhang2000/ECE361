@@ -51,6 +51,7 @@ struct User user[5] = {
     {.name = "user5", .key = "55"}
 };
 
+struct Session *active_session_list = NULL;
 
 void initialize_user() {
     for(int i = 0;i < 5;i++) {
@@ -195,6 +196,7 @@ struct Session *delete_session(struct Session *s_list, char *session_name){
             }
             break;
         }
+        prev = curr;
         curr = curr->next;
     }
 
@@ -238,5 +240,23 @@ struct Session *leave_session(struct Session *s_list, char *session_name, struct
     return s_list;
 }
 
-
-
+bool in_session(struct Session *s_list, char* user_src){
+    if(s_list == NULL){
+        return false;
+    }
+    struct Session *curr = s_list;
+    while(curr != NULL){
+        if(curr->user == NULL){
+            continue;
+        }
+        struct User *curr_u = curr->user;
+        while(curr_u != NULL){
+            if(strcmp(user_src, curr_u->name) == 0){
+                return true;
+            }
+            curr_u = curr_u->next;
+        }
+        curr = curr->next;
+    }
+    return false;
+}
