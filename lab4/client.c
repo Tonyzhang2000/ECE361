@@ -98,6 +98,10 @@ void *printMessage(void *arg) {
             printf("\033[0m");
         }
     }
+<<<<<<< HEAD
+=======
+   // printf(">>");
+>>>>>>> edeacf1f102ff1b1fddf681d3e4a6d0d7dc7bc9e
     return NULL;
 }
 
@@ -399,9 +403,15 @@ int main() {
     while(1) { 
 
         memset(buff, 0, sizeof buff);
+<<<<<<< HEAD
         sleep(0.5);
         printf(">>");
 
+=======
+
+        sleep(1);
+        printf(">>");
+>>>>>>> edeacf1f102ff1b1fddf681d3e4a6d0d7dc7bc9e
         fgets(buff, 1000, stdin);
         //fix /n at the end of the string
         //fix the empty input
@@ -447,6 +457,7 @@ int main() {
                 printf("Please login first...\n");
                 continue;
             }
+            inSession = false;
             //logout
             inSession = false;
             socketFD = logout(socketFD, name);
