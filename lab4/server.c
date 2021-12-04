@@ -246,6 +246,26 @@ void *newUser(void *arg) {
                     printf("\n");
                 }
                 printf("query result to user: %s\n", msg_sent.data);
+            } else if(msg_recv.type == PRIVATE) {
+                printf("private message received!\n");
+                msg_sent.type = MESSAGE;
+                strcpy(msg_sent.data, msg_recv.data);
+                strcpy(msg_sent.source, user[user_id].name);
+                msg_sent.size = strlen((char*)(msg_sent.data));
+                char sentItem[2000];
+                serialize(&msg_sent, sentItem);
+                printf("sent Item: %s\n", sentItem);
+
+                for(int i = 0;i < 5;i++) {
+                    if(strcmp(msg_recv.source, user[i].name) == 0 && user[i].active == true) {
+                        printf("receiver valid.\n");
+                        int bytesSent = send(user[i].socketFD, sentItem, strlen(sentItem), 0);
+                        if(bytesSent == -1){
+                            printf("send() fails...");
+                        }
+                        break;
+                    }
+                }
             }
 
 

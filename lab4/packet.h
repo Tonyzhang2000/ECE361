@@ -25,6 +25,7 @@
 //#define NLEAVE_SESS 15
 #define NS_NAK 16
 #define QUIT 17
+#define PRIVATE 18
 
 
 struct message {
